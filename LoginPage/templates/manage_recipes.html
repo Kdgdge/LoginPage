@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Manage Recipes</title>
+    <style>
+        .fade-section { opacity:0; transform:translateY(24px); transition:opacity 0.6s, transform 0.6s; }
+        .fade-section.visible { opacity:1; transform:none; }
+        .add-btn, .edit-btn, .delete-btn { border-radius: 7px; font-weight: 500; transition: background 0.18s, box-shadow 0.18s, transform 0.13s; }
+        .add-btn:focus, .edit-btn:focus, .delete-btn:focus { outline: 2px solid #4299e1 !important; outline-offset: 1px; background: #f0f8ff; }
+        .add-btn:hover, .edit-btn:hover { background: #3182ce !important; color: #fff !important; box-shadow: 0 4px 16px #3182ce22; transform: translateY(-2px) scale(1.03); }
+        .delete-btn:hover { background: #b91c1c !important; color: #fff !important; box-shadow: 0 4px 16px #e53e3e22; transform: translateY(-2px) scale(1.03); }
+        .floating-save { position: fixed; bottom: 32px; left: 32px; z-index: 1003; background: #fff; color: #4299e1; border-radius: 24px; box-shadow: 0 2px 12px #4299e133; padding: 0.7rem 1.5rem; font-weight: 600; font-size: 1.08rem; display: flex; align-items: center; gap: 0.7rem; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+        .floating-save.visible { opacity: 1; pointer-events: auto; }
+        .container-fade { animation: fadeInMain 0.8s cubic-bezier(.4,0,.2,1); }
+        @keyframes fadeInMain { from { opacity: 0; transform: translateY(32px);} to { opacity: 1; transform: none; } }
+        .add-btn, .edit-btn, .delete-btn { border-radius: 7px; font-weight: 500; transition: background 0.18s, box-shadow 0.18s, transform 0.13s; }
+        .add-btn:focus, .edit-btn:focus, .delete-btn:focus { outline: 2px solid #4299e1 !important; outline-offset: 1px; }
+        .add-btn:hover, .edit-btn:hover { background: #3182ce !important; color: #fff !important; box-shadow: 0 4px 16px #3182ce22; transform: translateY(-2px) scale(1.03); }
+        .delete-btn:hover { background: #b91c1c !important; color: #fff !important; box-shadow: 0 4px 16px #e53e3e22; transform: translateY(-2px) scale(1.03); }
+        th { font-size: 1.05rem; font-weight: 600; color: #2c5282; }
+        .top-bar { margin-bottom: 2rem; }
+    </style>
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="container container-fade fade-section">
+    <div class="floating-save" id="floating-save"><span>💾</span> Progress Saved</div>
+    <script>
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Floating save/progress indicator ---
+    let saveTimeout;
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.classList.add('visible');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>el.classList.remove('visible'), 1800);
+    }
+    // Show on any action button click
+    document.querySelectorAll('.add-btn, .edit-btn, .delete-btn').forEach(el=>{
+        el.addEventListener('click', showSaveIndicator);
+    });
+    </script>
+        <div class="manage-recipes-container">
+            <div class="manage-header">
+                <h1>Your Recipes</h1>
+                <a href="{{ url_for('add_recipe') }}" class="add-btn">+ Add Recipe</a>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages">
+                        {% for category, message in messages %}
+                            <li class="{{ category }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            <div class="recipes-list">
+                {% if recipes|length == 0 %}
+                    <div class="empty-state">
+                        <img src="https://img.icons8.com/ios-filled/100/4299e1/recipe-book.png" alt="No Recipes" style="width:60px;margin-bottom:1rem;">
+                        <div style="font-size:1.2rem;color:#718096;">No recipes yet. Start by adding your first recipe!</div>
+                    </div>
+                {% else %}
+                    <table class="recipes-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recipe in recipes %}
+                            <tr>
+                                <td>
+                                    {% if recipe['image_filename'] %}
+                                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe['image_filename']) }}" class="recipe-img" alt="Recipe Image">
+                                    {% else %}
+                                        <span style="color:#a0aec0;">No image</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-weight:600;color:#2c5282;">{{ recipe['title'] }}</td>
+                                <td style="color:#4a5568;">{{ recipe['description'] }}</td>
+                                <td class="actions">
+                                    <a href="{{ url_for('edit_recipe', recipe_id=recipe['id']) }}" class="edit-btn btn-modern">Edit</a>
+                                    <form method="post" action="{{ url_for('delete_recipe', recipe_id=recipe['id']) }}" style="display:inline;">
+                                        <button type="submit" class="delete-btn btn-modern" onclick="return confirm('Delete this recipe?');">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+        <style>
+        .manage-recipes-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px #4299e11a, 0 1.5px 8px #90cdf455;
+            padding: 2.2rem 2.2rem 1.7rem 2.2rem;
+            max-width: 900px;
+            margin: 2.5rem auto 2rem auto;
+        }
+        .manage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .add-btn {
+            background: #4299e1;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.6rem 1.3rem;
+            font-size: 1.05rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s;
+            box-shadow: 0 1px 4px #4299e11a;
+        }
+        .add-btn:hover {
+            background: #3182ce;
+        }
+        .recipes-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+            background: none;
+        }
+        .recipes-table th, .recipes-table td {
+            padding: 0.9rem 1.1rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .recipes-table th {
+            color: #2c5282;
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: #e3f2fd;
+            border-bottom: 2px solid #cbd5e0;
+        }
+        .recipes-table td {
+            font-size: 1.01rem;
+            vertical-align: middle;
+        }
+        .edit-btn.btn-modern {
+            background: #f6ad55;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 0.4rem 1.1rem;
+            font-size: 0.98rem;
+            margin-right: 0.5rem;
+            transition: background 0.2s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .edit-btn.btn-modern:hover {
+            background: #dd6b20;
+        }
+        .delete-btn.btn-modern {
+            background: #e53e3e;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 0.4rem 1.1rem;
+            font-size: 0.98rem;
+            transition: background 0.2s;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .delete-btn.btn-modern:hover {
+            background: #b91c1c;
+        }
+        .recipe-img {
+            max-width: 80px;
+            max-height: 60px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px #4299e11a;
+            object-fit: cover;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 0 2rem 0;
+        }
+        @media (max-width: 700px) {
+            .manage-recipes-container {
+                padding: 1.1rem 0.5rem 1rem 0.5rem;
+            }
+            .recipes-table th, .recipes-table td {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.97rem;
+            }
+            .add-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.97rem;
+            }
+            .recipe-img {
+                max-width: 55px;
+                max-height: 40px;
+            }
+        }
+        </style>
+</body>
+</html> 

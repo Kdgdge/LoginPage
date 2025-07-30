@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Edit Profile</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 500px; margin: 2rem auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; }
+        h1 { text-align: center; color: #2c3e50; }
+        form { display: flex; flex-direction: column; gap: 1.2rem; }
+        .profile-preview { background: #f7fafc; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 1.2rem; margin-top: 1.5rem; }
+        .profile-pic-preview { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid #4299e1; margin-bottom: 0.7rem; }
+        .theme-picker { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+        .theme-swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #e2e8f0; cursor: pointer; }
+        .theme-swatch.selected { border: 2px solid #4299e1; }
+        .success-msg, .error-msg { text-align: center; font-size: 1rem; margin-bottom: 1rem; }
+        .success-msg { color: #38a169; }
+        .error-msg { color: #e53e3e; }
+        label { color: #4a5568; font-size: 1rem; }
+        textarea { width: 100%; padding: 0.7rem; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 1rem; min-height: 100px; }
+        button { background: #4299e1; color: #fff; border: none; border-radius: 5px; padding: 0.7rem; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #3182ce; }
+        .back-link { display: block; margin-bottom: 1rem; color: #4299e1; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('chef_profile', username=session['username']) }}" class="back-link">&larr; Back to Profile</a>
+        <h1>Edit Profile</h1>
+        {% if success %}
+        <div class="success-msg">{{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" id="edit-profile-form" autocomplete="off">
+            <label for="profile_pic">Profile Picture</label>
+            <input type="file" id="profile_pic" name="profile_pic" accept="image/*">
+            {% if profile_pic_url %}
+            <img src="{{ profile_pic_url }}" alt="Profile Picture" class="profile-pic-preview" id="profile-pic-preview">
+            {% else %}
+            <img src="https://ui-avatars.com/api/?name={{ session['username'] }}" alt="Profile Picture" class="profile-pic-preview" id="profile-pic-preview">
+            {% endif %}
+            <label for="profile_info">Bio / Profile Info</label>
+            <textarea id="profile_info" name="profile_info">{{ profile_info }}</textarea>
+            <label for="contact">Contact Info</label>
+            <input type="text" id="contact" name="contact" value="{{ contact }}" placeholder="Phone, WhatsApp, etc.">
+            <label for="social">Social Media Links</label>
+            <input type="text" id="social" name="social" value="{{ social }}" placeholder="e.g. https://twitter.com/yourhandle">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ email }}" required>
+            <label for="password">New Password <span style="color:#718096;font-size:0.95em;">(leave blank to keep current)</span></label>
+            <input type="password" id="password" name="password" placeholder="New password">
+            <div class="theme-picker" id="theme-picker">
+                <span style="font-weight:500;color:#2c5282;">Theme:</span>
+                <div class="theme-swatch" style="background:#4299e1;" data-color="#4299e1"></div>
+                <div class="theme-swatch" style="background:#805ad5;" data-color="#805ad5"></div>
+                <div class="theme-swatch" style="background:#38a169;" data-color="#38a169"></div>
+                <div class="theme-swatch" style="background:#e53e3e;" data-color="#e53e3e"></div>
+                <div class="theme-swatch" style="background:#2d3748;" data-color="#2d3748"></div>
+            </div>
+            <button type="submit">Save</button>
+        </form>
+        <div class="profile-preview" id="profile-preview">
+            <img src="{{ profile_pic_url or 'https://ui-avatars.com/api/?name=' + session['username'] }}" alt="Profile Picture" class="profile-pic-preview" id="preview-pic">
+            <div style="font-weight:600;font-size:1.1rem;">{{ session['username'] }}</div>
+            <div id="preview-bio" style="margin-bottom:0.5rem;">{{ profile_info }}</div>
+            <div id="preview-contact" style="color:#2c5282;font-size:0.98rem;">{{ contact }}</div>
+            <div id="preview-social" style="color:#805ad5;font-size:0.98rem;">{{ social }}</div>
+        </div>
+    </div>
+<script>
+// Live profile preview
+const profilePicInput = document.getElementById('profile_pic');
+const profilePicPreview = document.getElementById('profile-pic-preview');
+const previewPic = document.getElementById('preview-pic');
+const profileInfo = document.getElementById('profile_info');
+const previewBio = document.getElementById('preview-bio');
+const contactInput = document.getElementById('contact');
+const previewContact = document.getElementById('preview-contact');
+const socialInput = document.getElementById('social');
+const previewSocial = document.getElementById('preview-social');
+if (profilePicInput) {
+    profilePicInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profilePicPreview.src = e.target.result;
+                previewPic.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+}
+if (profileInfo) {
+    profileInfo.addEventListener('input', function() {
+        previewBio.textContent = this.value;
+    });
+}
+if (contactInput) {
+    contactInput.addEventListener('input', function() {
+        previewContact.textContent = this.value;
+    });
+}
+if (socialInput) {
+    socialInput.addEventListener('input', function() {
+        previewSocial.textContent = this.value;
+    });
+}
+// Theme picker
+const themePicker = document.getElementById('theme-picker');
+if (themePicker) {
+    themePicker.addEventListener('click', function(e) {
+        if (e.target.classList.contains('theme-swatch')) {
+            document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('selected'));
+            e.target.classList.add('selected');
+            document.body.style.background = e.target.dataset.color;
+        }
+    });
+}
+</script>
+</body>
+</html> 

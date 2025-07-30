@@ -1,0 +1,120 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Live Show</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .live-show-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(44,82,130,0.07);
+            padding: 2rem 2.5rem 2.5rem 2.5rem;
+        }
+        .live-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #234e70;
+            margin-bottom: 1.2rem;
+        }
+        .live-desc {
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+        }
+        .invite-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+        .invite-form label {
+            font-weight: 500;
+            color: #2c5282;
+        }
+        .invite-form input, .invite-form textarea {
+            padding: 0.7rem;
+            border-radius: 5px;
+            border: 1px solid #e2e8f0;
+            font-size: 1rem;
+        }
+        .invite-form button {
+            background: #3182ce;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.7rem 1.5rem;
+            font-size: 1.08rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(49,130,206,0.08);
+            transition: background 0.18s;
+        }
+        .invite-form button:hover {
+            background: #2563eb;
+        }
+        .invite-list {
+            margin-top: 2rem;
+        }
+        .invite-item {
+            background: #f8fafc;
+            border-radius: 7px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 4px rgba(44,82,130,0.04);
+        }
+        .invite-item strong {
+            color: #234e70;
+        }
+    </style>
+</head>
+<body>
+    <div class="live-show-container">
+        <div class="live-title">Chef Live Show</div>
+        <div class="live-desc">Host a live cooking show and interact with your customers! Request invites to notify your customers and let them join your live session. You can also chat with your audience in real time during the show.</div>
+        <form class="invite-form" method="post">
+            <label for="invite_message">Invite Message</label>
+            <textarea id="invite_message" name="invite_message" placeholder="Describe your live show, time, and what you'll be cooking..." required></textarea>
+            <button type="submit">Request Invites</button>
+        </form>
+        <div class="upcoming-shows" style="margin-top:2.2rem;">
+            <h3 style="color:#2c5282; font-size:1.08rem; margin-bottom:0.7rem;">Upcoming Live Shows</h3>
+            {% if invites %}
+                {% for invite in invites|slice(0,1) %}
+                <div class="invite-item" style="background:#e6ecf3;">
+                    <strong>Next Show:</strong> {{ invite['message'] }}<br>
+                    <strong>Scheduled:</strong> {{ invite['timestamp'] }}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="color:#888;">No upcoming shows scheduled.</div>
+            {% endif %}
+        </div>
+        <div class="live-chat" style="margin-top:2.2rem;">
+            <h3 style="color:#2c5282; font-size:1.08rem; margin-bottom:0.7rem;">Live Chat (Demo)</h3>
+            <div id="chat-messages" style="background:#f8fafc; border-radius:7px; min-height:90px; max-height:180px; overflow-y:auto; padding:0.8rem 1rem; margin-bottom:0.7rem; font-size:1rem; color:#444;">
+                <div><strong>Customer1:</strong> Looking forward to your show, chef!</div>
+                <div><strong>Customer2:</strong> Will you share the recipe after?</div>
+            </div>
+            <form id="chat-form" onsubmit="event.preventDefault(); sendMessage();" style="display:flex;gap:0.7rem;align-items:center;">
+                <input type="text" id="chat-input" placeholder="Type your message..." style="flex:1;padding:0.5rem 0.7rem;border-radius:5px;border:1px solid #e2e8f0;">
+                <button type="submit" style="background:#3182ce;color:#fff;border:none;border-radius:5px;padding:0.5rem 1.1rem;font-size:1rem;cursor:pointer;">Send</button>
+            </form>
+        </div>
+        <script>
+        function sendMessage() {
+            var input = document.getElementById('chat-input');
+            var msg = input.value.trim();
+            if (!msg) return;
+            var chat = document.getElementById('chat-messages');
+            var div = document.createElement('div');
+            div.innerHTML = '<strong>You:</strong> ' + msg;
+            chat.appendChild(div);
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+        }
+        </script>
+    </div>
+</body>
+</html>

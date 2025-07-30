@@ -1,0 +1,1026 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Add Recipe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Only unique/critical styles for this page below */
+        .header-section {
+            background: linear-gradient(90deg,#4299e1 60%,#90cdf4 100%);
+            border-radius: 7px 7px 0 0;
+            padding: 1.2rem 1.5rem 1.1rem 1.5rem;
+            margin: -2rem -2rem 2rem -2rem;
+            box-shadow: 0 2px 8px rgba(66,153,225,0.07);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .progress-bar {
+            height: 7px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            margin-bottom: 2.2rem;
+            overflow: hidden;
+        }
+        #progress-inner {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg,#4299e1 60%,#90cdf4 100%);
+            transition: width 0.7s;
+        }
+        @media (max-width: 600px) {
+            .header-section { padding: 1rem 0.5rem 1rem 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="header-section" style="background:linear-gradient(90deg,#4299e1 60%,#90cdf4 100%);border-radius:7px 7px 0 0;padding:1.2rem 1.5rem 1.1rem 1.5rem;margin:-2rem -2rem 2rem -2rem;box-shadow:0 2px 8px rgba(66,153,225,0.07);display:flex;align-items:center;gap:1.2rem;">
+            <img src="https://img.icons8.com/ios-filled/50/ffffff/recipe-book.png" alt="Recipe Icon" style="width:38px;height:38px;filter:drop-shadow(0 2px 4px #3182ce55);">
+            <div>
+                <h1 style="margin:0;color:#fff;font-size:2rem;letter-spacing:0.5px;">Add a New Recipe</h1>
+                <div style="color:#e3f2fd;font-size:1.05rem;">Share your culinary masterpiece with the world!</div>
+            </div>
+        </div>
+        <div class="progress-bar" style="height:7px;background:#e2e8f0;border-radius:5px;margin-bottom:2.2rem;overflow:hidden;">
+            <div id="progress-inner" style="height:100%;width:0;background:linear-gradient(90deg,#4299e1 60%,#90cdf4 100%);transition:width 0.7s;"></div>
+        </div>
+        <div class="theme-picker" id="theme-picker">
+            <span style="font-weight:500;color:#2c5282;">Theme:</span>
+            <div class="theme-swatch" style="background:#4299e1;" data-color="#4299e1"></div>
+            <div class="theme-swatch" style="background:#805ad5;" data-color="#805ad5"></div>
+            <div class="theme-swatch" style="background:#38a169;" data-color="#38a169"></div>
+            <div class="theme-swatch" style="background:#e53e3e;" data-color="#e53e3e"></div>
+            <div class="theme-swatch" style="background:#2d3748;" data-color="#2d3748"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <a href="{{ url_for('manage_recipes') }}" class="back-link">&larr; Back to Recipes</a>
+            <button type="button" id="toggle-dark" style="background:#2d3748;color:#fff;border:none;border-radius:5px;padding:0.4rem 1rem;font-size:0.98rem;cursor:pointer;">🌙 Dark Mode</button>
+        </div>
+    <!-- Stepper Navigation -->
+    <div id="stepper" style="position:sticky;top:0.5rem;z-index:10;display:flex;gap:1.2rem;justify-content:center;margin-bottom:1.2rem;">
+        <div class="stepper-step" id="step-title" title="Recipe Title" style="background:#fff;border:2px solid #4299e1;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:box-shadow 0.2s;">1</div>
+        <div class="stepper-step" id="step-ingredients" title="Ingredients" style="background:#fff;border:2px solid #4299e1;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:box-shadow 0.2s;">2</div>
+        <div class="stepper-step" id="step-instructions" title="Instructions" style="background:#fff;border:2px solid #4299e1;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:box-shadow 0.2s;">3</div>
+        <div class="stepper-step" id="step-media" title="Media" style="background:#fff;border:2px solid #4299e1;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:box-shadow 0.2s;">4</div>
+        <div class="stepper-step" id="step-preview" title="Preview & Submit" style="background:#fff;border:2px solid #4299e1;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;cursor:pointer;transition:box-shadow 0.2s;">5</div>
+    </div>
+    <!-- Floating Save Indicator -->
+    <div id="floating-save" style="position:fixed;bottom:2.2rem;right:2.2rem;background:#4299e1;color:#fff;padding:0.7rem 1.3rem;border-radius:2rem;box-shadow:0 2px 8px #4299e155;font-weight:600;font-size:1.1rem;z-index:100;display:flex;align-items:center;gap:0.7rem;opacity:0;pointer-events:none;transition:opacity 0.4s;">
+        <span>💾 Saved</span>
+    </div>
+    <!-- Quick Help Button -->
+    <button type="button" id="quick-help-btn" class="help-btn" style="position:fixed;bottom:1.2rem;left:1.2rem;background:#805ad5;color:#fff;border:none;border-radius:50%;width:48px;height:48px;box-shadow:0 2px 8px #805ad555;font-size:1.7rem;z-index:101;cursor:pointer;transition:background 0.2s;">?</button>
+    <!-- Help Modal -->
+    <div id="help-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#23272a99;z-index:200;align-items:center;justify-content:center;">
+        <div style="background:#fff;color:#23272a;padding:2.2rem 2.5rem;border-radius:12px;max-width:420px;box-shadow:0 2px 16px #0003;position:relative;">
+            <button id="close-help" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#805ad5;">&times;</button>
+            <h2 style="margin-top:0;color:#4299e1;font-size:1.3rem;">Need Help?</h2>
+            <ul style="margin:1.2rem 0 0 1.2rem;padding:0;font-size:1.05rem;">
+                <li><b>Step through</b> the form using the stepper above.</li>
+                <li><b>Hover</b> over buttons for tooltips.</li>
+                <li><b>Drag</b> ingredients/instructions to reorder.</li>
+                <li><b>Use</b> the <b>AI Suggest</b> button for ingredient ideas.</li>
+                <li><b>Import</b> lists from clipboard for speed.</li>
+                <li><b>Try</b> voice input for instructions.</li>
+                <li><b>Switch</b> themes or dark mode for comfort.</li>
+                <li><b>Press</b> <kbd>Shift+H</kbd> for quick help.</li>
+            </ul>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" id="add-recipe-form" autocomplete="off" aria-label="Add a new recipe">
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-title">
+                <div class="section-label"><span class="icon">🍽️</span>Title <span style="color:#e53e3e;">*</span></div>
+                <input type="text" id="title" name="title" required placeholder="e.g. Classic Lasagna" aria-label="Recipe Title">
+                <small style="color:#718096;">Give your recipe a catchy name.</small>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-ingredients">
+                <div class="section-label"><span class="icon">📝</span>Description</div>
+                <input type="text" id="description" name="description" placeholder="Short summary of your recipe" aria-label="Recipe Description">
+                <small style="color:#718096;">Describe what makes this recipe special.</small>
+                <button type="button" class="ai-suggest-btn btn-modern" id="ai-suggest">AI Suggest Ingredients</button>
+                <div id="ai-suggest-list" class="ai-suggest-list" style="display:none;"></div>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-instructions">
+                <div class="section-label"><span class="icon">🥕</span>Ingredients</div>
+                <div id="ingredient-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="text" id="ingredient-qty" placeholder="Qty" style="width:60px;" aria-label="Ingredient Quantity">
+                    <input type="text" id="ingredient-unit" placeholder="Unit" style="width:70px;" aria-label="Ingredient Unit">
+                    <input type="text" id="ingredient-input" placeholder="Add ingredient..." autocomplete="off" style="flex:1;" aria-label="Ingredient Name">
+                    <button type="button" id="add-ingredient" style="background:#38a169;">Add</button>
+                    <button type="button" id="import-ingredients" style="background:#805ad5;">📋 Import</button>
+                </div>
+                <small style="color:#718096;">Tip: Start typing for suggestions. Click 'Add' or press Enter. <b>Import</b> to paste a list from clipboard. Click an ingredient to edit. Use arrows to reorder.</small>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-media">
+                <div class="section-label"><span class="icon">👨‍🍳</span>Instructions</div>
+                <div id="instructions-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="text" id="instruction-input" placeholder="Add step..." autocomplete="off" style="flex:1;" aria-label="Instruction Step">
+                    <button type="button" id="add-instruction" style="background:#3182ce;">Add</button>
+                    <button type="button" id="import-instructions" style="background:#805ad5;">📋 Import</button>
+                    <button type="button" class="voice-btn" id="voice-btn" title="Voice to Text">🎤</button>
+                </div>
+                <small style="color:#718096;">Tip: Add each step separately for clarity. Drag or use arrows to reorder. <b>Import</b> to paste steps from clipboard. Click a step to edit. <b>🎤</b> Use your voice to add steps.</small>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;">
+                <div class="section-label"><span class="icon">📷</span>Recipe Image</div>
+                <div id="image-drop" style="border:2px dashed #cbd5e0; border-radius:7px; padding:1.2rem; text-align:center; background:#f7fafc; cursor:pointer; margin-bottom:0.5rem;">
+                    <span id="image-drop-text">Drag & drop an image here, or click to select</span>
+                    <input type="file" id="image" name="image" accept="image/*" style="display:none;">
+                </div>
+                <img id="image-preview" src="#" alt="Image Preview" style="display:none;max-width:100%;border-radius:7px;margin-top:0.7rem;" tabindex="0"/>
+                <button type="button" id="crop-image-btn" style="background:#805ad5;margin-top:0.7rem;display:none;">✂️ Crop Image</button>
+                <div class="cropper-modal" id="cropper-modal">
+                    <div class="cropper-content">
+                        <canvas id="cropper-canvas" style="max-width:400px;max-height:300px;border-radius:7px;border:1.5px solid #e2e8f0;"></canvas>
+                        <div class="cropper-actions">
+                            <button type="button" id="crop-confirm" style="background:#38a169;color:#fff;">Crop</button>
+                            <button type="button" id="crop-cancel" style="background:#e53e3e;color:#fff;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                <small style="color:#718096;">Recommended: 16:9 aspect ratio, clear and appetizing.</small>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;">
+                <div class="section-label"><span class="icon">🎬</span>Recipe Video <span style="color:#718096;">(optional, mp4 only)</span></div>
+                <div id="video-drop" style="border:2px dashed #cbd5e0; border-radius:7px; padding:1.2rem; text-align:center; background:#f7fafc; cursor:pointer; margin-bottom:0.5rem;">
+                    <span id="video-drop-text">Drag & drop a video here, or click to select</span>
+                    <input type="file" id="video" name="video" accept="video/mp4" style="display:none;">
+                </div>
+                <video id="video-preview" controls style="display:none;max-width:100%;border-radius:7px;margin-top:0.7rem;" tabindex="0" aria-label="Recipe Video Preview"></video>
+                <small style="color:#718096;">Show a quick preview or cooking process (max 1 min recommended).</small>
+            </div>
+            <hr class="section-divider">
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-rating">
+                <div class="section-label"><span class="icon">⭐</span>Your Rating</div>
+                <div id="star-rating" style="display:flex;gap:0.3rem;align-items:center;font-size:2rem;user-select:none;">
+                    <span class="star" data-value="1" tabindex="0" aria-label="1 star">☆</span>
+                    <span class="star" data-value="2" tabindex="0" aria-label="2 stars">☆</span>
+                    <span class="star" data-value="3" tabindex="0" aria-label="3 stars">☆</span>
+                    <span class="star" data-value="4" tabindex="0" aria-label="4 stars">☆</span>
+                    <span class="star" data-value="5" tabindex="0" aria-label="5 stars">☆</span>
+                    <span id="star-label" style="font-size:1.1rem;color:#4299e1;margin-left:0.7rem;"></span>
+                </div>
+                <input type="hidden" name="rating" id="rating" value="0">
+            </div>
+            <div style="margin-bottom:1.2rem;" class="fade-section" id="section-comment">
+                <div class="section-label"><span class="icon">💬</span>Your Comment</div>
+                <textarea id="comment" name="comment" placeholder="Share your thoughts or tips..." aria-label="Comment" style="min-height:70px;"></textarea>
+                <div id="comment-preview" style="margin-top:0.5rem;color:#2c5282;font-size:1.01rem;display:none;"><b>Preview:</b> <span id="comment-preview-text"></span></div>
+            </div>
+            <div class="summary-card" id="summary-card" style="display:none;">
+                <div class="summary-title">Your Review</div>
+                <div class="summary-rating" id="summary-rating"></div>
+                <div class="summary-comment" id="summary-comment"></div>
+            </div>
+            <button type="submit" id="submit-btn" class="btn-modern">Add Recipe</button>
+        </form>
+        <div id="success-message" style="display:none;align-items:center;justify-content:center;flex-direction:column;margin-top:2.2rem;">
+            <svg id="success-check" width="70" height="70" viewBox="0 0 70 70" style="margin-bottom:1rem;">
+                <circle cx="35" cy="35" r="33" fill="#e6fffa" stroke="#38a169" stroke-width="4"/>
+                <polyline points="20,38 32,50 50,24" fill="none" stroke="#38a169" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div style="font-size:1.25rem;color:#38a169;font-weight:600;">Recipe added successfully!</div>
+        </div>
+        <div id="live-preview" style="margin-top:2.5rem;" class="fade-section" id="section-preview">
+            <div style="font-weight:600;font-size:1.1rem;margin-bottom:0.7rem;color:#2c5282;">Live Recipe Preview</div>
+            <div id="preview-card" style="background:#f7fafc;border-radius:10px;box-shadow:0 2px 8px #0001;padding:1.2rem;max-width:420px;margin:auto;">
+                <div id="preview-image" style="width:100%;height:180px;background:#e2e8f0;border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:1rem;" tabindex="0" aria-label="Recipe Image Preview"><span style="color:#a0aec0;">Image preview</span></div>
+                <video id="preview-video" controls style="display:none;width:100%;height:180px;object-fit:cover;border-radius:7px;margin-bottom:1rem;" tabindex="0" aria-label="Recipe Video Preview"></video>
+                <div style="font-size:1.3rem;font-weight:700;margin-bottom:0.3rem;" id="preview-title">Recipe Title</div>
+                <div style="color:#718096;font-size:1.05rem;margin-bottom:0.7rem;" id="preview-desc">Description will appear here.</div>
+                <div style="font-weight:600;margin-bottom:0.2rem;">Ingredients:</div>
+                <ul id="preview-ingredients" style="margin:0 0 0.7rem 1.2rem;padding:0;"></ul>
+                <div style="font-weight:600;margin-bottom:0.2rem;">Instructions:</div>
+                <ol id="preview-instructions" style="margin:0 0 0.7rem 1.2rem;padding:0;"></ol>
+            </div>
+        </div>
+        </form>
+<!-- Stray help section removed. -->
+    </div>
+    <script>
+    let saveTimeout; // Declare only once at the top of the script
+    // --- Stepper Active State ---
+    function updateStepper() {
+        const scrollY = window.scrollY;
+        const sections = [
+            {id:'section-title', step:'step-title'},
+            {id:'section-ingredients', step:'step-ingredients'},
+            {id:'section-instructions', step:'step-instructions'},
+            {id:'section-media', step:'step-media'},
+            {id:'section-preview', step:'step-preview'}
+        ];
+        let activeIdx = 0;
+        for (let i=0; i<sections.length; ++i) {
+            const el = document.getElementById(sections[i].id);
+            if (el && el.getBoundingClientRect().top < 180) activeIdx = i;
+        }
+        sections.forEach((s,i)=>{
+            const stepEl = document.getElementById(s.step);
+            if (stepEl) stepEl.classList.toggle('active', i===activeIdx);
+        });
+    }
+    window.addEventListener('scroll', updateStepper);
+    window.addEventListener('DOMContentLoaded', updateStepper);
+
+    // --- Stepper Navigation ---
+    document.querySelectorAll('.stepper-step').forEach((step, idx) => {
+        step.tabIndex = 0;
+        step.addEventListener('focus', ()=>step.classList.add('active'));
+        step.addEventListener('blur', ()=>step.classList.remove('active'));
+        step.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                document.getElementById(['section-title','section-ingredients','section-instructions','section-media','section-preview'][idx]).scrollIntoView({behavior:'smooth'});
+            }
+        });
+        step.addEventListener('click', function() {
+            document.getElementById(['section-title','section-ingredients','section-instructions','section-media','section-preview'][idx]).scrollIntoView({behavior:'smooth'});
+        });
+    });
+    // --- Floating Save Indicator ---
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.style.opacity = 1;
+        el.style.pointerEvents = 'auto';
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>{
+            el.style.opacity = 0;
+            el.style.pointerEvents = 'none';
+        }, 1800);
+    }
+    document.querySelectorAll('input, textarea').forEach(el=>{
+        el.addEventListener('input', showSaveIndicator);
+    });
+
+    // --- Tooltips for Buttons ---
+    document.querySelectorAll('button[title]').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            let tip = document.createElement('div');
+            tip.className = 'tooltip';
+            tip.textContent = btn.title;
+            tip.style.position = 'absolute';
+            tip.style.background = '#23272a';
+            tip.style.color = '#fff';
+            tip.style.padding = '0.4rem 0.8rem';
+            tip.style.borderRadius = '6px';
+            tip.style.fontSize = '0.98rem';
+            tip.style.zIndex = 9999;
+            tip.style.top = (btn.getBoundingClientRect().top - 38 + window.scrollY) + 'px';
+            tip.style.left = (btn.getBoundingClientRect().left + btn.offsetWidth/2 - 60) + 'px';
+            tip.id = 'btn-tooltip';
+            document.body.appendChild(tip);
+        });
+        btn.addEventListener('mouseleave', function() {
+            const tip = document.getElementById('btn-tooltip');
+            if (tip) tip.remove();
+        });
+    });
+
+    // --- Floating Quick Help Button ---
+    const quickHelpBtn = document.getElementById('quick-help-btn');
+    quickHelpBtn.onclick = ()=>{
+        document.getElementById('help-modal').style.display='flex';
+    };
+    window.addEventListener('keydown', function(e) {
+        if (e.shiftKey && (e.key==='h'||e.key==='H')) {
+            document.getElementById('help-modal').style.display='flex';
+            quickHelpBtn.classList.add('visible');
+            setTimeout(()=>quickHelpBtn.classList.remove('visible'), 1200);
+        }
+    });
+    // Help Modal close
+    document.getElementById('close-help').onclick = ()=>{
+        document.getElementById('help-modal').style.display='none';
+    };
+    window.addEventListener('click', e=>{
+        if(e.target===document.getElementById('help-modal')) document.getElementById('help-modal').style.display='none';
+    });
+
+    // --- Drag-and-drop reorder for ingredients/instructions already present ---
+    // --- Animated Section Transitions already present ---
+
+    // --- Add CSS for enhancements ---
+    const enhanceStyle = document.createElement('style');
+    enhanceStyle.textContent = `
+    .stepper-step { box-shadow:0 2px 8px #4299e122; margin:0 0.2rem; }
+    .stepper-step.active { background:#4299e1 !important; color:#fff !important; box-shadow:0 2px 12px #4299e144; border-color:#805ad5; }
+    #floating-save.visible, #floating-save[style*='opacity: 1'] { opacity:1 !important; pointer-events:auto !important; }
+    .help-btn { box-shadow:0 2px 8px #805ad555; }
+    .help-btn.visible { background:#e53e3e !important; }
+    #help-modal { display:none; align-items:center; justify-content:center; }
+    #help-modal[style*='display: flex'] { display:flex !important; }
+    .tooltip { pointer-events:none; }
+    `;
+    document.head.appendChild(enhanceStyle);
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Stepper micro-interactions ---
+    document.querySelectorAll('.stepper-step').forEach((step, idx) => {
+        step.tabIndex = 0;
+        step.addEventListener('focus', ()=>step.classList.add('active'));
+        step.addEventListener('blur', ()=>step.classList.remove('active'));
+        step.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                document.getElementById(['section-title','section-ingredients','section-instructions','section-media','section-preview'][idx]).scrollIntoView({behavior:'smooth'});
+            }
+        });
+        step.addEventListener('click', function() {
+            document.getElementById(['section-title','section-ingredients','section-instructions','section-media','section-preview'][idx]).scrollIntoView({behavior:'smooth'});
+        });
+    });
+
+    // --- Floating save/progress indicator ---
+    // let saveTimeout; // Removed duplicate declaration
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.classList.add('visible');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>el.classList.remove('visible'), 1800);
+    }
+    // Show on any input change
+    document.querySelectorAll('input, textarea').forEach(el=>{
+        el.addEventListener('input', showSaveIndicator);
+    });
+
+    // --- Star Rating ---
+    const stars = document.querySelectorAll('#star-rating .star');
+    const ratingInput = document.getElementById('rating');
+    const starLabel = document.getElementById('star-label');
+    const starLabels = ['','Poor','Fair','Good','Very Good','Excellent'];
+    const summaryCard = document.getElementById('summary-card');
+    const summaryRating = document.getElementById('summary-rating');
+    const summaryComment = document.getElementById('summary-comment');
+    function updateSummaryCard() {
+        const val = parseInt(ratingInput.value)||0;
+        const comment = commentBox.value.trim();
+        if (val > 0 || comment) {
+            summaryCard.style.display = 'block';
+            summaryRating.innerHTML = val > 0 ? '★'.repeat(val) + '☆'.repeat(5-val) + ` <span style="font-size:1rem;color:#4299e1;">${starLabels[val]}</span>` : '';
+            summaryComment.textContent = comment;
+        } else {
+            summaryCard.style.display = 'none';
+        }
+    }
+    stars.forEach(star => {
+        star.addEventListener('mouseenter', function() {
+            highlightStars(this.dataset.value);
+        });
+        star.addEventListener('mouseleave', function() {
+            highlightStars(ratingInput.value);
+        });
+        star.addEventListener('click', function() {
+            ratingInput.value = this.dataset.value;
+            highlightStars(this.dataset.value);
+            updateSummaryCard();
+        });
+        star.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                ratingInput.value = this.dataset.value;
+                highlightStars(this.dataset.value);
+                updateSummaryCard();
+            }
+        });
+    });
+    function highlightStars(val) {
+        stars.forEach(star => {
+            star.textContent = (parseInt(star.dataset.value) <= val) ? '★' : '☆';
+        });
+        starLabel.textContent = starLabels[parseInt(val)||0];
+    }
+    highlightStars(0);
+
+    // --- Comment Live Preview ---
+    const commentBox = document.getElementById('comment');
+    const commentPreview = document.getElementById('comment-preview');
+    const commentPreviewText = document.getElementById('comment-preview-text');
+    commentBox.addEventListener('input', function() {
+        if (this.value.trim()) {
+            commentPreview.style.display = 'block';
+            commentPreviewText.textContent = this.value;
+        } else {
+            commentPreview.style.display = 'none';
+        }
+        updateSummaryCard();
+    });
+    // --- Theme Color Picker ---
+    const themePicker = document.getElementById('theme-picker');
+    themePicker.addEventListener('click', function(e) {
+        if (e.target.classList.contains('theme-swatch')) {
+            document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.remove('selected'));
+            e.target.classList.add('selected');
+            document.documentElement.style.setProperty('--main-theme', e.target.dataset.color);
+            // Update main button colors
+            document.querySelectorAll('button').forEach(btn=>{
+                if(!btn.classList.contains('help-btn') && !btn.classList.contains('voice-btn')) btn.style.background = e.target.dataset.color;
+            });
+        }
+    });
+    // Set default theme
+    document.querySelector('.theme-swatch[data-color="#4299e1"]').classList.add('selected');
+    document.documentElement.style.setProperty('--main-theme', '#4299e1');
+
+    // --- AI Ingredient Suggestion (Mock) ---
+    document.getElementById('ai-suggest').onclick = function() {
+        const desc = document.getElementById('description').value.trim();
+        const aiList = document.getElementById('ai-suggest-list');
+        aiList.style.display = 'block';
+        aiList.innerHTML = '<em>Thinking...</em>';
+        setTimeout(()=>{
+            // Mock AI: suggest based on keywords
+            let suggestions = [];
+            if(/cake|bake|dessert/i.test(desc)) suggestions = ['Flour','Sugar','Eggs','Butter','Baking Powder','Vanilla'];
+            else if(/salad|fresh|veggie/i.test(desc)) suggestions = ['Lettuce','Tomato','Cucumber','Olive Oil','Salt','Pepper'];
+            else if(/chicken|roast|grill/i.test(desc)) suggestions = ['Chicken Breast','Olive Oil','Garlic','Rosemary','Salt','Pepper'];
+            else suggestions = ['Salt','Pepper','Olive Oil','Onion','Garlic'];
+            aiList.innerHTML = '<b>Suggested Ingredients:</b><ul style="margin:0.5rem 0 0 1.2rem;">'+suggestions.map(s=>`<li style="cursor:pointer;">${s}</li>`).join('')+'</ul>';
+            aiList.querySelectorAll('li').forEach(li=>{
+                li.onclick = ()=>{
+                    document.getElementById('ingredient-input').value = li.textContent;
+                    document.getElementById('add-ingredient').click();
+                };
+            });
+        }, 1200);
+    };
+
+    // --- Voice to Text for Instructions ---
+    const voiceBtn = document.getElementById('voice-btn');
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        voiceBtn.onclick = function() {
+            if (voiceBtn.classList.contains('listening')) {
+                recognition.stop();
+                voiceBtn.classList.remove('listening');
+                voiceBtn.title = 'Voice to Text';
+                return;
+            }
+            recognition.start();
+            voiceBtn.classList.add('listening');
+            voiceBtn.title = 'Listening... Click to stop.';
+        };
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('instruction-input').value = transcript;
+            voiceBtn.classList.remove('listening');
+            voiceBtn.title = 'Voice to Text';
+        };
+        recognition.onerror = function() {
+            voiceBtn.classList.remove('listening');
+            voiceBtn.title = 'Voice to Text';
+        };
+    } else {
+        voiceBtn.disabled = true;
+        voiceBtn.title = 'Voice recognition not supported.';
+    }
+
+    // --- Image Cropper (Simple) ---
+    let cropperImage, cropperCtx, cropperModal, cropperCanvas, cropperStart, cropperEnd, cropping = false, cropRect = null, cropImageData = null;
+    cropperModal = document.getElementById('cropper-modal');
+    cropperCanvas = document.getElementById('cropper-canvas');
+    const cropBtn = document.getElementById('crop-image-btn');
+    const cropConfirm = document.getElementById('crop-confirm');
+    const cropCancel = document.getElementById('crop-cancel');
+    let cropImage = null;
+    function showCropper(file) {
+        cropperModal.style.display = 'flex';
+        cropperCanvas.width = 400; cropperCanvas.height = 300;
+        cropperCtx = cropperCanvas.getContext('2d');
+        const img = new window.Image();
+        img.onload = function() {
+            cropperCtx.clearRect(0,0,400,300);
+            cropperCtx.drawImage(img,0,0,400,300);
+            cropImage = img;
+            cropRect = null;
+        };
+        img.src = URL.createObjectURL(file);
+    }
+    let lastImageFile = null;
+    function showImagePreview(file) {
+        lastImageFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+            cropBtn.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+    }
+    cropBtn.onclick = function() {
+        if (lastImageFile) showCropper(lastImageFile);
+    };
+    cropperCanvas.onmousedown = function(e) {
+        cropping = true;
+        cropperStart = {x:e.offsetX, y:e.offsetY};
+    };
+    cropperCanvas.onmousemove = function(e) {
+        if (!cropping) return;
+        cropperEnd = {x:e.offsetX, y:e.offsetY};
+        cropperCtx.clearRect(0,0,400,300);
+        cropperCtx.drawImage(cropImage,0,0,400,300);
+        cropperCtx.strokeStyle = '#4299e1';
+        cropperCtx.lineWidth = 2;
+        cropperCtx.strokeRect(cropperStart.x, cropperStart.y, cropperEnd.x-cropperStart.x, cropperEnd.y-cropperStart.y);
+    };
+    cropperCanvas.onmouseup = function(e) {
+        cropping = false;
+        cropRect = {x:Math.min(cropperStart.x,cropperEnd.x), y:Math.min(cropperStart.y,cropperEnd.y), w:Math.abs(cropperEnd.x-cropperStart.x), h:Math.abs(cropperEnd.y-cropperStart.y)};
+    };
+    cropConfirm.onclick = function() {
+        if (!cropRect) return;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = cropRect.w; tempCanvas.height = cropRect.h;
+        tempCanvas.getContext('2d').drawImage(cropImage, cropRect.x, cropRect.y, cropRect.w, cropRect.h, 0, 0, cropRect.w, cropRect.h);
+        imagePreview.src = tempCanvas.toDataURL();
+        cropperModal.style.display = 'none';
+    };
+    cropCancel.onclick = function() { cropperModal.style.display = 'none'; };
+    // --- Floating Stepper Logic ---
+    function updateStepper() {
+        const scrollY = window.scrollY;
+        const sections = [
+            {id:'section-title', step:'step-title'},
+            {id:'section-ingredients', step:'step-ingredients'},
+            {id:'section-instructions', step:'step-instructions'},
+            {id:'section-media', step:'step-media'},
+            {id:'section-preview', step:'step-preview'}
+        ];
+        let activeIdx = 0;
+        for (let i=0; i<sections.length; ++i) {
+            const el = document.getElementById(sections[i].id);
+            if (el && el.getBoundingClientRect().top < 180) activeIdx = i;
+        }
+        sections.forEach((s,i)=>{
+            const stepEl = document.getElementById(s.step);
+            if (stepEl) stepEl.classList.toggle('active', i===activeIdx);
+        });
+    }
+    window.addEventListener('scroll', updateStepper);
+    window.addEventListener('DOMContentLoaded', updateStepper);
+
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Help Button Modal ---
+    const helpBtn = document.getElementById('help-btn');
+    const helpModal = document.getElementById('help-modal');
+    const closeHelp = document.getElementById('close-help');
+    helpBtn.onclick = ()=>{ helpModal.style.display='block'; };
+    closeHelp.onclick = ()=>{ helpModal.style.display='none'; };
+    window.addEventListener('click', e=>{ if(e.target===helpModal) helpModal.style.display='none'; });
+
+    const darkBtn = document.getElementById('toggle-dark');
+    darkBtn.onclick = function() {
+        document.body.classList.toggle('dark-mode');
+        if (document.body.classList.contains('dark-mode')) {
+            darkBtn.textContent = '☀️ Light Mode';
+        } else {
+            darkBtn.textContent = '🌙 Dark Mode';
+        }
+    };
+    // Add dark mode CSS
+    const darkStyle = document.createElement('style');
+    darkStyle.textContent = `
+    body.dark-mode { background: #181a1b; color: #e2e8f0; }
+    body.dark-mode .container { background: #23272a; box-shadow: 0 2px 8px #0002; }
+    body.dark-mode h1, body.dark-mode label, body.dark-mode .back-link { color: #e2e8f0; }
+    body.dark-mode input, body.dark-mode textarea { background: #23272a; color: #e2e8f0; border: 1px solid #4a5568; }
+    body.dark-mode .header-section { background: linear-gradient(90deg,#2b6cb0 60%,#4fd1c5 100%); }
+    body.dark-mode .progress-bar { background: #2d3748; }
+    body.dark-mode #progress-inner { background: linear-gradient(90deg,#4fd1c5 60%,#2b6cb0 100%); }
+    body.dark-mode button { background: #4fd1c5; color: #23272a; }
+    body.dark-mode button:hover { background: #38b2ac; }
+    body.dark-mode #image-drop, body.dark-mode #video-drop { background: #23272a; border-color: #4a5568; }
+    body.dark-mode #autocomplete-list { background: #23272a; color: #e2e8f0; border-color: #4a5568; }
+    `;
+    document.head.appendChild(darkStyle);
+    // --- Ingredient Auto-complete & List ---
+    const commonIngredients = [
+        'Salt', 'Pepper', 'Olive Oil', 'Butter', 'Garlic', 'Onion', 'Tomato', 'Chicken', 'Beef', 'Eggs', 'Milk', 'Flour', 'Sugar', 'Cheese', 'Basil', 'Oregano', 'Carrot', 'Potato', 'Rice', 'Pasta', 'Bread', 'Lemon', 'Vinegar', 'Soy Sauce', 'Honey', 'Spinach', 'Mushroom', 'Bell Pepper', 'Cumin', 'Paprika', 'Chili', 'Ginger', 'Coriander', 'Parsley', 'Thyme', 'Rosemary', 'Cinnamon', 'Nutmeg', 'Vanilla', 'Yogurt', 'Cream', 'Fish', 'Shrimp', 'Pork', 'Lettuce', 'Cabbage', 'Beans', 'Peas', 'Corn', 'Apple', 'Banana', 'Orange', 'Strawberry', 'Blueberry', 'Chocolate', 'Almond', 'Walnut', 'Peanut', 'Sesame', 'Tofu', 'Broccoli', 'Cauliflower', 'Celery', 'Zucchini', 'Pumpkin', 'Maple Syrup', 'Mustard', 'Mayonnaise', 'Ketchup', 'Sausage', 'Ham', 'Turkey', 'Duck', 'Lamb', 'Cloves', 'Cardamom', 'Mint', 'Chives', 'Scallion', 'Avocado', 'Coconut', 'Pineapple', 'Mango', 'Grapes', 'Raisin', 'Dates', 'Fig', 'Pear', 'Plum', 'Peach', 'Apricot', 'Kiwi', 'Melon', 'Watermelon', 'Cucumber', 'Radish', 'Turnip', 'Beet', 'Artichoke', 'Asparagus', 'Eggplant', 'Leek', 'Shallot', 'Chickpea', 'Lentil', 'Quinoa', 'Barley', 'Oats', 'Polenta', 'Sour Cream', 'Ricotta', 'Mozzarella', 'Parmesan', 'Feta', 'Gouda', 'Cheddar', 'Blue Cheese', 'Goat Cheese', 'Provolone', 'Swiss Cheese', 'Gruyere', 'Brie', 'Camembert', 'Gorgonzola', 'Roquefort', 'Emmental', 'Edam', 'Havarti', 'Monterey Jack', 'Colby', 'Pepper Jack', 'Muenster', 'Fontina', 'Manchego', 'Pecorino', 'Asiago', 'Romano', 'Cotija', 'Queso Fresco', 'Paneer', 'Halloumi', 'Mascarpone', 'Burrata', 'Labneh', 'Cottage Cheese', 'Cream Cheese', 'Neufchatel', 'Double Cream', 'Triple Cream', 'Clotted Cream', 'Crème Fraîche', 'Sour Cream', 'Buttermilk', 'Evaporated Milk', 'Condensed Milk', 'Powdered Milk', 'Skim Milk', 'Whole Milk', 'Half-and-Half', 'Heavy Cream', 'Light Cream', 'Whipping Cream', 'Nonfat Milk', 'Lowfat Milk', 'Goat Milk', 'Sheep Milk', 'Buffalo Milk', 'Soy Milk', 'Almond Milk', 'Coconut Milk', 'Rice Milk', 'Oat Milk', 'Hemp Milk', 'Cashew Milk', 'Macadamia Milk', 'Pea Milk', 'Flax Milk', 'Quinoa Milk', 'Hazelnut Milk', 'Walnut Milk', 'Pistachio Milk', 'Tiger Nut Milk', 'Camel Milk', 'Horse Milk', 'Yak Milk', 'Reindeer Milk', 'Moose Milk', 'Donkey Milk', 'Zebra Milk', 'Elephant Milk', 'Giraffe Milk', 'Kangaroo Milk', 'Koala Milk', 'Platypus Milk', 'Wombat Milk', 'Tasmanian Devil Milk', 'Bandicoot Milk', 'Bilby Milk', 'Quokka Milk', 'Quoll Milk', 'Numbat Milk', 'Dunnart Milk', 'Antechinus Milk', 'Planigale Milk', 'Marsupial Mole Milk', 'Sugar Glider Milk', 'Feathertail Glider Milk', 'Striped Possum Milk', 'Leadbeater’s Possum Milk', 'Mountain Pygmy Possum Milk', 'Eastern Pygmy Possum Milk', 'Western Pygmy Possum Milk', 'Long-tailed Pygmy Possum Milk', 'Honey Possum Milk', 'Greater Glider Milk', 'Ringtail Possum Milk', 'Brushtail Possum Milk', 'Cuscus Milk', 'Spotted Cuscus Milk', 'Common Cuscus Milk', 'Black-spotted Cuscus Milk', 'Blue-eyed Cuscus Milk', 'Bear Cuscus Milk', 'Sulawesi Bear Cuscus Milk', 'Dwarf Cuscus Milk', 'Ground Cuscus Milk', 'Tree Kangaroo Milk', 'Doria’s Tree Kangaroo Milk', 'Goodfellow’s Tree Kangaroo Milk', 'Grizzled Tree Kangaroo Milk', 'Matschie’s Tree Kangaroo Milk', 'Lumholtz’s Tree Kangaroo Milk', 'Bennett’s Tree Kangaroo Milk', 'Golden-mantled Tree Kangaroo Milk', 'Wondiwoi Tree Kangaroo Milk', 'Tenkile Tree Kangaroo Milk', 'Ifola Tree Kangaroo Milk', 'Lowland Tree Kangaroo Milk', 'Scott’s Tree Kangaroo Milk', 'Vogelkop Tree Kangaroo Milk', 'Weyland Tree Kangaroo Milk', 'Dingiso Milk', 'Doria’s Tree Kangaroo Milk', 'Goodfellow’s Tree Kangaroo Milk', 'Grizzled Tree Kangaroo Milk', 'Matschie’s Tree Kangaroo Milk', 'Lumholtz’s Tree Kangaroo Milk', 'Bennett’s Tree Kangaroo Milk', 'Golden-mantled Tree Kangaroo Milk', 'Wondiwoi Tree Kangaroo Milk', 'Tenkile Tree Kangaroo Milk', 'Ifola Tree Kangaroo Milk', 'Lowland Tree Kangaroo Milk', 'Scott’s Tree Kangaroo Milk', 'Vogelkop Tree Kangaroo Milk', 'Weyland Tree Kangaroo Milk', 'Dingiso Milk'
+    ];
+    const ingredientInput = document.getElementById('ingredient-input');
+    const ingredientList = document.getElementById('ingredient-list');
+    const addIngredientBtn = document.getElementById('add-ingredient');
+    let ingredients = [];
+    function renderIngredients() {
+        ingredientList.innerHTML = '';
+        ingredients.forEach((ing, i) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '0.5rem';
+            div.innerHTML = `
+                <span style='flex:1;cursor:pointer;' onclick='editIngredient(${i})'>${ing.qty ? `<b>${ing.qty}</b> ` : ''}${ing.unit ? `<i>${ing.unit}</i> ` : ''}${ing.name}</span>
+                <button type='button' style='background:#e53e3e;color:#fff;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='removeIngredient(${i})'>Remove</button>
+                <button type='button' style='background:#a0aec0;color:#23272a;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='moveIngredient(${i},-1)' title='Move up'>&uarr;</button>
+                <button type='button' style='background:#a0aec0;color:#23272a;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='moveIngredient(${i},1)' title='Move down'>&darr;</button>
+            `;
+            ingredientList.appendChild(div);
+        });
+        updatePreview();
+    }
+    function moveIngredient(idx, dir) {
+        if ((dir === -1 && idx === 0) || (dir === 1 && idx === ingredients.length - 1)) return;
+        const temp = ingredients[idx];
+        ingredients[idx] = ingredients[idx + dir];
+        ingredients[idx + dir] = temp;
+        renderIngredients();
+    }
+    window.moveIngredient = moveIngredient;
+    function editIngredient(idx) {
+        const ing = ingredients[idx];
+        document.getElementById('ingredient-qty').value = ing.qty;
+        document.getElementById('ingredient-unit').value = ing.unit;
+        ingredientInput.value = ing.name;
+        ingredients.splice(idx, 1);
+        renderIngredients();
+        ingredientInput.focus();
+    }
+    window.editIngredient = editIngredient;
+    function removeIngredient(idx) {
+        ingredients.splice(idx, 1);
+        renderIngredients();
+    }
+    window.removeIngredient = removeIngredient;
+    addIngredientBtn.onclick = function() {
+        const name = ingredientInput.value.trim();
+        const qty = document.getElementById('ingredient-qty').value.trim();
+        const unit = document.getElementById('ingredient-unit').value.trim();
+        if (name && !ingredients.some(ing => ing.name === name && ing.qty === qty && ing.unit === unit)) {
+            ingredients.push({ name, qty, unit });
+            ingredientInput.value = '';
+            document.getElementById('ingredient-qty').value = '';
+            document.getElementById('ingredient-unit').value = '';
+            renderIngredients();
+        }
+    };
+    ingredientInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addIngredientBtn.click();
+        }
+    });
+    // Import ingredients from clipboard
+    document.getElementById('import-ingredients').onclick = async function() {
+        let text = '';
+        try { text = await navigator.clipboard.readText(); } catch {}
+        if (!text) text = prompt('Paste your ingredients list:');
+        if (!text) return;
+        text.split(/\r?\n/).forEach(line => {
+            const m = line.match(/^(\d+\s*[\/\.]?\d*\s*)?([a-zA-Z]+)?\s*(.+)$/);
+            if (m) {
+                const qty = m[1] ? m[1].trim() : '';
+                const unit = m[2] ? m[2].trim() : '';
+                const name = m[3] ? m[3].trim() : line.trim();
+                if (name && !ingredients.some(ing => ing.name === name && ing.qty === qty && ing.unit === unit)) {
+                    ingredients.push({ name, qty, unit });
+                }
+            }
+        });
+        renderIngredients();
+    };
+    // Simple auto-complete
+    ingredientInput.addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        closeAutocomplete();
+        if (!val) return;
+        const matches = commonIngredients.filter(ing => ing.toLowerCase().startsWith(val)).slice(0, 5);
+        if (matches.length === 0) return;
+        const list = document.createElement('div');
+        list.id = 'autocomplete-list';
+        list.style.position = 'absolute';
+        list.style.background = '#fff';
+        list.style.border = '1px solid #e2e8f0';
+        list.style.borderRadius = '5px';
+        list.style.zIndex = 1000;
+        list.style.width = ingredientInput.offsetWidth + 'px';
+        matches.forEach(match => {
+            const item = document.createElement('div');
+            item.textContent = match;
+            item.style.padding = '0.5rem';
+            item.style.cursor = 'pointer';
+            item.onmousedown = function() {
+                ingredientInput.value = match;
+            };
+            list.appendChild(item);
+        });
+        ingredientInput.parentNode.appendChild(list);
+    });
+    function closeAutocomplete() {
+        const el = document.getElementById('autocomplete-list');
+        if (el) el.remove();
+    }
+    document.addEventListener('click', function(e) {
+        if (e.target !== ingredientInput) closeAutocomplete();
+    });
+    // --- Instructions Step Builder ---
+    const instructionInput = document.getElementById('instruction-input');
+    const instructionsList = document.getElementById('instructions-list');
+    const addInstructionBtn = document.getElementById('add-instruction');
+    let instructions = [];
+    function renderInstructions() {
+        instructionsList.innerHTML = '';
+        instructions.forEach((step, i) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '0.5rem';
+            div.draggable = true;
+            div.ondragstart = e => { e.dataTransfer.setData('text/plain', i); };
+            div.ondragover = e => { e.preventDefault(); };
+            div.ondrop = e => {
+                e.preventDefault();
+                const from = +e.dataTransfer.getData('text/plain');
+                const to = i;
+                if (from !== to) {
+                    const moved = instructions.splice(from, 1)[0];
+                    instructions.splice(to, 0, moved);
+                    renderInstructions();
+                }
+            };
+            div.innerHTML = `
+                <span style='flex:1;cursor:pointer;' onclick='editInstruction(${i})'><b>Step ${i+1}:</b> ${step}</span>
+                <button type='button' style='background:#e53e3e;color:#fff;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='removeInstruction(${i})'>Remove</button>
+                <button type='button' style='background:#a0aec0;color:#23272a;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='moveInstruction(${i},-1)' title='Move up'>&uarr;</button>
+                <button type='button' style='background:#a0aec0;color:#23272a;border:none;border-radius:3px;padding:0.2rem 0.7rem;cursor:pointer;' onclick='moveInstruction(${i},1)' title='Move down'>&darr;</button>
+            `;
+            instructionsList.appendChild(div);
+        });
+        updatePreview();
+    }
+    function moveInstruction(idx, dir) {
+        if ((dir === -1 && idx === 0) || (dir === 1 && idx === instructions.length - 1)) return;
+        const temp = instructions[idx];
+        instructions[idx] = instructions[idx + dir];
+        instructions[idx + dir] = temp;
+        renderInstructions();
+    }
+    window.moveInstruction = moveInstruction;
+    function editInstruction(idx) {
+        instructionInput.value = instructions[idx];
+        instructions.splice(idx, 1);
+        renderInstructions();
+        instructionInput.focus();
+    }
+    window.editInstruction = editInstruction;
+    // --- Live Preview Card ---
+    function updatePreview() {
+        document.getElementById('preview-title').textContent = document.getElementById('title').value || 'Recipe Title';
+        document.getElementById('preview-desc').textContent = document.getElementById('description').value || 'Description will appear here.';
+        const ul = document.getElementById('preview-ingredients');
+        ul.innerHTML = '';
+        ingredients.forEach(ing => {
+            const li = document.createElement('li');
+            li.textContent = `${ing.qty ? ing.qty + ' ' : ''}${ing.unit ? ing.unit + ' ' : ''}${ing.name}`;
+            ul.appendChild(li);
+        });
+        const ol = document.getElementById('preview-instructions');
+        ol.innerHTML = '';
+        instructions.forEach(step => {
+            const li = document.createElement('li');
+            li.textContent = step;
+            ol.appendChild(li);
+        });
+        // Image preview
+        const img = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-image');
+        if (img && img.style.display !== 'none') {
+            previewImg.innerHTML = `<img src='${img.src}' style='width:100%;height:100%;object-fit:cover;border-radius:7px;'>`;
+        } else {
+            previewImg.innerHTML = `<span style='color:#a0aec0;'>Image preview</span>`;
+        }
+        // Video preview
+        const video = document.getElementById('video-preview');
+        const previewVideo = document.getElementById('preview-video');
+        if (video && video.style.display !== 'none' && video.src) {
+            previewVideo.src = video.src;
+            previewVideo.style.display = 'block';
+        } else {
+            previewVideo.src = '';
+            previewVideo.style.display = 'none';
+        }
+    }
+    document.getElementById('title').addEventListener('input', updatePreview);
+    document.getElementById('description').addEventListener('input', updatePreview);
+    function removeInstruction(idx) {
+        instructions.splice(idx, 1);
+        renderInstructions();
+    }
+    window.removeInstruction = removeInstruction;
+    addInstructionBtn.onclick = function() {
+        const val = instructionInput.value.trim();
+        if (val) {
+            instructions.push(val);
+            instructionInput.value = '';
+            renderInstructions();
+        }
+    };
+    instructionInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addInstructionBtn.click();
+        }
+    });
+    // Import instructions from clipboard
+    document.getElementById('import-instructions').onclick = async function() {
+        let text = '';
+        try { text = await navigator.clipboard.readText(); } catch {}
+        if (!text) text = prompt('Paste your instructions/steps:');
+        if (!text) return;
+        text.split(/\r?\n/).forEach(line => {
+            const step = line.replace(/^\d+\.?\s*/, '').trim();
+            if (step && !instructions.includes(step)) instructions.push(step);
+        });
+        renderInstructions();
+    };
+    // --- Real-time Form Validation ---
+    const form = document.getElementById('add-recipe-form');
+    form.addEventListener('submit', function(e) {
+        // Replace textarea values with joined lists
+        if (ingredients.length === 0) {
+            alert('Please add at least one ingredient.');
+            ingredientInput.focus();
+            e.preventDefault();
+            return;
+        }
+        if (instructions.length === 0) {
+            alert('Please add at least one instruction step.');
+            instructionInput.focus();
+            e.preventDefault();
+            return;
+        }
+        // Set hidden textareas for backend compatibility
+        let ingTextarea = document.getElementById('ingredients');
+        if (!ingTextarea) {
+            ingTextarea = document.createElement('textarea');
+            ingTextarea.id = 'ingredients';
+            ingTextarea.name = 'ingredients';
+            ingTextarea.style.display = 'none';
+            form.appendChild(ingTextarea);
+        }
+        // Save as "qty unit name" per line
+        ingTextarea.value = ingredients.map(ing => `${ing.qty ? ing.qty + ' ' : ''}${ing.unit ? ing.unit + ' ' : ''}${ing.name}`).join('\n');
+        let instTextarea = document.getElementById('instructions');
+        if (!instTextarea) {
+            instTextarea = document.createElement('textarea');
+            instTextarea.id = 'instructions';
+            instTextarea.name = 'instructions';
+            instTextarea.style.display = 'none';
+            form.appendChild(instTextarea);
+        }
+        instTextarea.value = instructions.join('\n');
+        // Show success animation if not actually submitting (simulate for demo)
+        if (form.getAttribute('data-demo') === 'true') {
+            e.preventDefault();
+            document.getElementById('success-message').style.display = 'flex';
+            form.style.opacity = 0.4;
+            document.getElementById('submit-btn').disabled = true;
+            launchConfetti();
+            setTimeout(() => {
+                form.reset();
+                form.style.opacity = 1;
+                document.getElementById('success-message').style.display = 'none';
+                document.getElementById('submit-btn').disabled = false;
+                renderIngredients();
+                renderInstructions();
+                updatePreview();
+            }, 2200);
+        }
+    });
+    // Animate progress bar on load
+    window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const progress = document.getElementById('progress-inner');
+            progress.classList.add('animated');
+            progress.style.width = '100%';
+        }, 200);
+    });
+    // --- Confetti Animation on Success ---
+    function launchConfetti() {
+        const colors = ['#4299e1','#38a169','#805ad5','#e53e3e','#f6ad55','#90cdf4'];
+        const container = document.getElementById('confetti-container');
+        for(let i=0;i<42;++i){
+            const conf = document.createElement('div');
+            conf.className = 'confetti-piece';
+            conf.style.background = colors[Math.floor(Math.random()*colors.length)];
+            conf.style.left = Math.random()*100+'vw';
+            conf.style.top = '-20px';
+            conf.style.transform = `rotate(${Math.random()*360}deg)`;
+            conf.style.transition = `top 1.2s cubic-bezier(.4,0,.2,1), transform 1.2s`;
+            container.appendChild(conf);
+            setTimeout(()=>{
+                conf.style.top = (60+Math.random()*30)+'vh';
+                conf.style.transform += ` scale(${0.7+Math.random()*0.7})`;
+            }, 10);
+            setTimeout(()=>{ conf.remove(); }, 1400);
+        }
+    }
+
+    // --- Theme color memory (localStorage) ---
+    const themeKey = 'add_recipe_theme';
+    const themeSwatches = document.querySelectorAll('.theme-swatch');
+    themeSwatches.forEach(swatch => {
+        swatch.addEventListener('click', function() {
+            localStorage.setItem(themeKey, swatch.dataset.color);
+        });
+    });
+    // On load, restore theme
+    const savedTheme = localStorage.getItem(themeKey);
+    if (savedTheme) {
+        document.documentElement.style.setProperty('--main-theme', savedTheme);
+        themeSwatches.forEach(s=>s.classList.remove('selected'));
+        const match = Array.from(themeSwatches).find(s=>s.dataset.color===savedTheme);
+        if (match) match.classList.add('selected');
+    }
+
+    // --- Floating quick-help button with keyboard shortcut ---
+    const quickHelpBtn = document.getElementById('quick-help-btn');
+    quickHelpBtn.onclick = ()=>{
+        document.getElementById('help-modal').style.display='block';
+    };
+    window.addEventListener('keydown', function(e) {
+        if (e.shiftKey && (e.key==='h'||e.key==='H')) {
+            document.getElementById('help-modal').style.display='block';
+            quickHelpBtn.classList.add('visible');
+            setTimeout(()=>quickHelpBtn.classList.remove('visible'), 1200);
+        }
+    });
+    // Image drag-and-drop
+    const imageDrop = document.getElementById('image-drop');
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('image-preview');
+    imageDrop.addEventListener('click', () => imageInput.click());
+    imageDrop.addEventListener('dragover', e => { e.preventDefault(); imageDrop.classList.add('drag-over'); });
+    imageDrop.addEventListener('dragleave', e => { e.preventDefault(); imageDrop.classList.remove('drag-over'); });
+    imageDrop.addEventListener('drop', e => {
+        e.preventDefault();
+        imageDrop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            imageInput.files = e.dataTransfer.files;
+            showImagePreview(file);
+        }
+    });
+    imageInput.addEventListener('change', e => {
+        if (imageInput.files[0]) showImagePreview(imageInput.files[0]);
+    });
+    function showImagePreview(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    // Video drag-and-drop
+    const videoDrop = document.getElementById('video-drop');
+    const videoInput = document.getElementById('video');
+    const videoPreview = document.getElementById('video-preview');
+    videoDrop.addEventListener('click', () => videoInput.click());
+    videoDrop.addEventListener('dragover', e => { e.preventDefault(); videoDrop.classList.add('drag-over'); });
+    videoDrop.addEventListener('dragleave', e => { e.preventDefault(); videoDrop.classList.remove('drag-over'); });
+    videoDrop.addEventListener('drop', e => {
+        e.preventDefault();
+        videoDrop.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'video/mp4') {
+            videoInput.files = e.dataTransfer.files;
+            showVideoPreview(file);
+        }
+    });
+    videoInput.addEventListener('change', e => {
+        if (videoInput.files[0]) showVideoPreview(videoInput.files[0]);
+    });
+    function showVideoPreview(file) {
+        const url = URL.createObjectURL(file);
+        videoPreview.src = url;
+        videoPreview.style.display = 'block';
+        updatePreview();
+    }
+    </script>
+</body>
+</html> 

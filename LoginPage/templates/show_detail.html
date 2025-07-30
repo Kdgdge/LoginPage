@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ show.title }} - Live Show Details</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 2rem auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; }
+        h1 { color: #2c3e50; margin-bottom: 0.5em; }
+        .meta { color: #4a5568; margin-bottom: 1.2em; }
+        .desc { margin-bottom: 1.5em; font-size: 1.08em; color: #2d3748; }
+        .status { display: inline-block; padding: 0.3em 1em; border-radius: 5px; font-weight: 600; }
+        .status-live { background: #e6fffa; color: #319795; }
+        .status-upcoming { background: #f0fff4; color: #68d391; }
+        .status-ended { background: #f7fafc; color: #a0aec0; }
+        .join-btn { background: #4299e1; color: #fff; border: none; padding: 0.7em 1.5em; border-radius: 5px; font-size: 1.08rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .join-btn[disabled] { background: #cbd5e0; color: #718096; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ show.title }}</h1>
+        <div class="meta">
+            Hosted by <b>{{ show.chef_name }}</b> &middot; 
+            <span>{{ show.start_time }}</span> &middot; 
+            <span class="status status-{{ show.status }}">{{ show.status|capitalize }}</span>
+        </div>
+        <div class="desc">
+            <b>Description:</b><br>
+            {{ show.description or 'No description provided.' }}
+        </div>
+        <div style="margin-bottom:1.2em;">
+            <b>RSVPs:</b> {{ rsvp_count }}
+            {% if user_rsvped %}
+                <span style="color:#38a169; font-weight:600; margin-left:1em;">You're attending</span>
+            {% endif %}
+        </div>
+        {% if show.status == 'live' %}
+            <a href="{{ url_for('live_show', show_id=show.id) }}" class="join-btn">Join Live Show</a>
+            <div style="margin-top:2.5em;">
+                <h2 style="color:#2c5282;">Live Chat</h2>
+                <div id="chat-box" style="max-height:220px;overflow-y:auto;background:#f7fafc;border-radius:7px;padding:1em 1.2em;margin-bottom:1em;">
+                    {% if chat_messages %}
+                        {% for msg in chat_messages %}
+                            <div class="chat-msg" data-msgid="{{ msg.id }}" style="margin-bottom:0.7em;">
+                                <b style="color:#3182ce;">{{ msg.username }}</b>
+                                <span style="color:#a0aec0;font-size:0.93em;">{{ msg.created_at }}</span>
+                                {% if muted_user_ids and msg.user_id in muted_user_ids %}
+                                    <span style="color:#e53e3e;font-size:0.93em;margin-left:0.7em;">[Muted]</span>
+                                {% endif %}<br>
+                                {% if msg.message %}<span style="color:#2d3748;">{{ msg.message }}</span>{% endif %}
+                                {% if msg.image_url %}<br><img src="{{ msg.image_url }}" style="max-width:160px;max-height:120px;border-radius:6px;margin-top:0.3em;box-shadow:0 1px 4px #ccc;">{% endif %}
+                                {% if is_chef %}
+                                    <form method="post" action="{{ url_for('delete_show_chat', show_id=show.id, msg_id=msg.id) }}" style="display:inline;">
+                                        <button type="submit" style="background:#e53e3e;color:#fff;border:none;padding:0.1em 0.7em;border-radius:4px;font-size:0.9em;margin-left:0.7em;">Delete</button>
+                                    </form>
+                                    {% if msg.user_id not in muted_user_ids %}
+                                        <form method="post" action="{{ url_for('mute_show_user', show_id=show.id, user_id=msg.user_id) }}" style="display:inline;">
+                                            <button type="submit" style="background:#ecc94b;color:#2d3748;border:none;padding:0.1em 0.7em;border-radius:4px;font-size:0.9em;margin-left:0.5em;">Mute</button>
+                                        </form>
+                                    {% else %}
+                                        <form method="post" action="{{ url_for('unmute_show_user', show_id=show.id, user_id=msg.user_id) }}" style="display:inline;">
+                                            <button type="submit" style="background:#38a169;color:#fff;border:none;padding:0.1em 0.7em;border-radius:4px;font-size:0.9em;margin-left:0.5em;">Unmute</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="color:#a0aec0;">No messages yet. Be the first to chat!</div>
+                    {% endif %}
+                </div>
+                <form method="post" action="{{ url_for('post_show_chat', show_id=show.id) }}" enctype="multipart/form-data" style="display:flex;gap:0.7em;align-items:center;">
+                    <input id="chat-input" type="text" name="message" placeholder="Type your message..." style="flex:1;padding:0.6em;border-radius:5px;border:1px solid #cbd5e0;" maxlength="180" required autocomplete="off">
+                    <button id="emoji-btn" type="button" style="background:#fff;border:1px solid #cbd5e0;border-radius:5px;padding:0.6em 0.8em;font-size:1.2em;cursor:pointer;">😊</button>
+                    <input type="file" id="chat-image" name="image" accept="image/*" style="display:none;">
+                    <button type="button" id="image-btn" style="background:#fff;border:1px solid #cbd5e0;border-radius:5px;padding:0.6em 0.8em;font-size:1.2em;cursor:pointer;">🖼️</button>
+                    <button type="submit" class="join-btn" style="padding:0.6em 1.2em;">Send</button>
+                </form>
+                <div id="image-preview" style="margin-top:0.5em;"></div>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const imageBtn = document.getElementById('image-btn');
+                    const imageInput = document.getElementById('chat-image');
+                    const preview = document.getElementById('image-preview');
+                    imageBtn.addEventListener('click', function() {
+                        imageInput.click();
+                    });
+                    imageInput.addEventListener('change', function() {
+                        preview.innerHTML = '';
+                        if (imageInput.files && imageInput.files[0]) {
+                            const file = imageInput.files[0];
+                            if (file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    preview.innerHTML = `<img src="${e.target.result}" style="max-width:120px;max-height:80px;border-radius:6px;box-shadow:0 1px 4px #ccc;">`;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }
+                    });
+                });
+                </script>
+                <!-- Emoji Button CDN -->
+                <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js"></script>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const button = document.querySelector('#emoji-btn');
+                    const input = document.querySelector('#chat-input');
+                    const picker = new EmojiButton({
+                        position: 'top-end',
+                        zIndex: 9999
+                    });
+                    button.addEventListener('click', () => {
+                        picker.togglePicker(button);
+                    });
+                    picker.on('emoji', emoji => {
+                        // Insert emoji at cursor position
+                        const start = input.selectionStart;
+                        const end = input.selectionEnd;
+                        const text = input.value;
+                        input.value = text.slice(0, start) + emoji + text.slice(end);
+                        input.focus();
+                        input.selectionStart = input.selectionEnd = start + emoji.length;
+                    });
+                });
+                </script>
+            </div>
+            <script>
+            // Auto-refresh chat every 5 seconds
+            function fetchChat() {
+                fetch("{{ url_for('get_show_chat_messages', show_id=show.id) }}")
+                .then(r=>r.json())
+                .then(data=>{
+                    const box = document.getElementById('chat-box');
+                    if (!box) return;
+                    let html = '';
+                    if (data.length === 0) {
+                        html = '<div style="color:#a0aec0;">No messages yet. Be the first to chat!</div>';
+                    } else {
+                        data.forEach(function(msg) {
+                            html += `<div class=\"chat-msg\" data-msgid=\"${msg.id}\" style=\"margin-bottom:0.7em;\">` +
+                                `<b style=\"color:#3182ce;\">${msg.username}</b> ` +
+                                `<span style=\"color:#a0aec0;font-size:0.93em;\">${msg.created_at}</span><br>`;
+                            if (msg.message) html += `<span style=\"color:#2d3748;\">${msg.message}</span>`;
+                            if (msg.image_url) html += `<br><img src='${msg.image_url}' style=\"max-width:160px;max-height:120px;border-radius:6px;margin-top:0.3em;box-shadow:0 1px 4px #ccc;\">`;
+                            html += `</div>`;
+                        });
+                    }
+                    box.innerHTML = html;
+                    box.scrollTop = box.scrollHeight;
+                });
+            }
+            setInterval(fetchChat, 5000);
+            window.addEventListener('DOMContentLoaded', function() {
+                fetchChat();
+                setTimeout(()=>{
+                    const box = document.getElementById('chat-box');
+                    if (box) box.scrollTop = box.scrollHeight;
+                }, 300);
+            });
+            </script>
+        {% elif show.status == 'upcoming' %}
+            {% if user_rsvped %}
+                <form method="post" action="{{ url_for('unrsvp_show', show_id=show.id) }}" style="display:inline;">
+                    <button type="submit" class="join-btn" style="background:#e53e3e;">Cancel RSVP</button>
+                </form>
+            {% else %}
+                <form method="post" action="{{ url_for('rsvp_show', show_id=show.id) }}" style="display:inline;">
+                    <button type="submit" class="join-btn">RSVP / Remind Me</button>
+                </form>
+            {% endif %}
+        {% else %}
+            <button class="join-btn" disabled>Show Ended</button>
+        {% endif %}
+        <div style="margin-top:2em;">
+            <a href="{{ url_for('order_history') }}">&larr; Back to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Manage Live Shows</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 700px; margin: 2rem auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; }
+        h1 { text-align: center; color: #2c3e50; }
+        form { margin-bottom: 2rem; }
+        label { display: block; margin-top: 1.2em; font-weight: 600; color: #2c5282; }
+        input, select { width: 100%; padding: 0.6em; margin-top: 0.3em; border: 1px solid #cbd5e0; border-radius: 5px; }
+        button { margin-top: 1.2em; background: #4299e1; color: #fff; border: none; padding: 0.7em 1.5em; border-radius: 5px; font-size: 1.08rem; font-weight: 600; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+        th, td { padding: 0.7rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { background: #f1f5f9; color: #2c5282; font-weight: 600; }
+        .status-live { color: #319795; font-weight: bold; }
+        .status-upcoming { color: #68d391; font-weight: bold; }
+        .status-ended { color: #a0aec0; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manage Live Shows</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <form method="post">
+            <input type="hidden" name="action" value="{{ 'edit' if edit_show else 'add' }}">
+            {% if edit_show %}
+                <input type="hidden" name="show_id" value="{{ edit_show.id }}">
+            {% endif %}
+            <label for="title">Show Title</label>
+            <input type="text" id="title" name="title" required value="{{ edit_show.title if edit_show else '' }}">
+            <label for="start_time">Start Time (YYYY-MM-DD HH:MM)</label>
+            <input type="text" id="start_time" name="start_time" placeholder="2025-07-28 18:00" required value="{{ edit_show.start_time[:16] if edit_show else '' }}">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="upcoming" {% if edit_show and edit_show.status=='upcoming' %}selected{% endif %}>Upcoming</option>
+                <option value="live" {% if edit_show and edit_show.status=='live' %}selected{% endif %}>Live</option>
+                <option value="ended" {% if edit_show and edit_show.status=='ended' %}selected{% endif %}>Ended</option>
+            </select>
+            <button type="submit">{{ 'Update' if edit_show else 'Add' }} Live Show</button>
+            {% if edit_show %}
+                <a href="{{ url_for('manage_live_shows') }}" style="margin-left:1em;">Cancel</a>
+            {% endif %}
+        </form>
+        <h2>Your Shows</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Start Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for show in shows %}
+                <tr>
+                    <td><a href="{{ url_for('show_detail', show_id=show.id) }}" style="color:#3182ce;text-decoration:underline;">{{ show.title }}</a></td>
+                    <td>{{ show.start_time }}</td>
+                    <td class="status-{{ show.status }}">{{ show.status|capitalize }}</td>
+                    <td>
+                        <a href="{{ url_for('manage_live_shows', edit_id=show.id) }}" style="color:#3182ce;">Edit</a>
+                        <form method="post" action="{{ url_for('delete_live_show', show_id=show.id) }}" style="display:inline;" onsubmit="return confirm('Delete this show?');">
+                            <button type="submit" style="background:#e53e3e;color:#fff;border:none;padding:0.3em 0.8em;border-radius:4px;margin-left:0.7em;">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="color:#a0aec0;">No shows yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

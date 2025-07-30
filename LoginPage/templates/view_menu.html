@@ -1,0 +1,649 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Menu</title>
+    <style>
+        /* General Layout */
+        :root {
+            --primary-color: #4299e1;
+            --primary-dark: #3182ce;
+            --accent-color: #805ad5;
+            --accent-dark: #6b46c1;
+            --success-color: #38a169;
+            --error-color: #e53e3e;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #f1f5f9;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+        }
+
+        .flash-message.success {
+            background: rgba(56, 161, 105, 0.95);
+            color: white;
+        }
+
+        .flash-message.error {
+            background: rgba(229, 62, 62, 0.95);
+            color: white;
+        }
+
+        .flash-message .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0 0 0 1rem;
+            font-size: 1.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .flash-message .close-btn:hover {
+            opacity: 1;
+        }
+
+        /* Menu Grid Layout */
+        .menu-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .menu-item {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .recipe-img-container {
+            position: relative;
+            padding-top: 66.67%; /* 3:2 Aspect Ratio */
+            overflow: hidden;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            background: var(--bg-secondary);
+        }
+
+        .recipe-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--bg-secondary);
+        }
+
+        .menu-item:hover .recipe-img {
+            transform: scale(1.05);
+        }
+
+        .menu-info {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .menu-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .menu-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .menu-chef {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Ratings and Comments */
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--bg-secondary);
+        }
+
+        .star {
+            font-size: 1.4rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .star.selected,
+        .star:hover {
+            color: #f6ad55;
+            transform: scale(1.1);
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--bg-secondary);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        .comment-btn,
+        .order-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .comment-btn:hover,
+        .order-btn:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .comments-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .comment-item {
+            background: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
+
+        .comment-date {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .comment-text {
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .menu-item {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .menu-list {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .flash-messages {
+                left: 1rem;
+                right: 1rem;
+                top: 1rem;
+            }
+
+            .comment-form {
+                flex-direction: column;
+            }
+
+            .comment-btn {
+                width: 100%;
+            }
+        }
+
+        /* Loading States */
+        .menu-item.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Accessibility */
+        .star:focus,
+        .comment-btn:focus,
+        .order-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Success Notification */
+        .success-notification {
+            position: fixed;
+            top: 32px;
+            right: 32px;
+            z-index: 2000;
+            background: linear-gradient(90deg, #38a169 60%, #68d391 100%);
+            color: #fff;
+            font-weight: 600;
+            font-size: 1.08rem;
+            padding: 1rem 2.2rem 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px #38a16933, 0 2px 8px #0001;
+            animation: fadeInSlide 0.7s cubic-bezier(.4,0,.2,1);
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        @keyframes fadeInSlide {
+            0% { opacity: 0; transform: translateY(-32px) scale(0.95); }
+            100% { opacity: 1; transform: none; }
+        }
+
+        /* Removing duplicate recipe-img styles as they're already defined above in a better way */
+        .menu-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+        }
+        .menu-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #2c5282;
+            margin-bottom: 0.2rem;
+        }
+        .menu-desc { color: #4a5568; font-size: 1rem; margin-bottom: 0.2rem; }
+        .menu-chef { color: #718096; font-size: 0.98rem; margin-bottom: 0.4rem; }
+        .order-btn {
+            background: linear-gradient(90deg, #4299e1 60%, #805ad5 100%);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 0.6rem 1.4rem;
+            font-size: 1.08rem;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px #4299e122;
+            transition: background 0.22s, box-shadow 0.18s, transform 0.13s;
+            align-self: flex-start;
+            letter-spacing: 0.01em;
+            position: relative;
+            overflow: hidden;
+        }
+        .order-btn:focus {
+            outline: 2px solid #4299e1 !important;
+            outline-offset: 1.5px;
+            background: #f0f8ff;
+        }
+        .order-btn:hover {
+            background: linear-gradient(90deg, #3182ce 60%, #6b46c1 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 6px 24px #3182ce22;
+            transform: translateY(-2px) scale(1.04);
+        }
+        .order-btn:active {
+            transform: scale(0.97);
+        }
+        .floating-save {
+            position: fixed;
+            bottom: 32px;
+            left: 32px;
+            z-index: 1003;
+            background: #fff;
+            color: #4299e1;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px #4299e133;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.08rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .floating-save.visible { opacity: 1; pointer-events: auto; }
+    </style>
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}" id="flash-{{ loop.index }}">
+                    {{ message }}
+                    <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+                </div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+    <div class="container">
+        <h1>Menu</h1>
+    {% if recipes|length == 0 %}
+        <p>No recipes available yet.</p>
+    {% else %}
+    <ul class="menu-list">
+        {% for recipe in recipes %}
+        <li class="menu-item">
+            <div class="recipe-img-container">
+                {% if recipe['image_filename'] %}
+                    <img src="{{ url_for('static', filename='recipe_images/' ~ recipe['image_filename']) }}" class="recipe-img" alt="Recipe Image">
+                {% else %}
+                    <img src="{{ url_for('static', filename='recipe_images/default-recipe.jpg') }}" class="recipe-img" alt="Default Recipe Image">
+                {% endif %}
+            </div>
+            <div class="menu-info">
+                <span class="menu-title" tabindex="0">{{ recipe['title'] }}</span>
+                {% if recipe['description'] %}
+                    <span class="menu-desc">{{ recipe['description'][:120] }}{% if recipe['description']|length > 120 %}...{% endif %}</span>
+                {% endif %}
+                <span class="menu-chef">By {{ recipe['chef_name'] }}</span>
+                <div style="display:flex;gap:0.7rem;margin:0.7rem 0 0.2rem 0;align-items:center;">
+                    <form method="post" action="{{ url_for('order_recipe', recipe_id=recipe['id']) }}" style="margin:0;">
+                        <button type="submit" class="order-btn" aria-label="Order {{ recipe['title'] }}">Order</button>
+                    </form>
+                    <a href="{{ url_for('recipe_detail', recipe_id=recipe['id']) }}" class="order-btn" style="background:#805ad5;" aria-label="View details for {{ recipe['title'] }}">View Details</a>
+                </div>
+                <!-- Ratings and Comments UI -->
+                <div class="rating-row" aria-label="Rate this recipe">
+                    {% set user_rating = recipe['user_rating']|int if recipe['user_rating'] is not none else 0 %}
+                    {% for i in range(1,6) %}
+                    <span class="star{% if user_rating >= i %} selected{% endif %}" tabindex="0" role="button" aria-label="{{ i }} star" data-recipe="{{ recipe['id'] }}" data-rating="{{ i }}">&#9733;</span>
+                    {% endfor %}
+                    <span style="font-size:0.98rem;color:#805ad5;margin-left:0.5rem;">{{ '%.1f'|format(recipe['avg_rating']|float if recipe['avg_rating'] is not none else 0) }}/5</span>
+                </div>
+                <form class="comment-form" method="post" action="{{ url_for('add_comment', recipe_id=recipe['id']) }}">
+                    <input type="text" name="comment" class="comment-input" placeholder="Add a comment..." maxlength="180" required>
+                    <button type="submit" class="comment-btn">Post</button>
+                </form>
+                {% if 'comments' in recipe and recipe['comments'] %}
+                <div class="comments-list">
+                    {% for comment in recipe['comments'] %}
+                    <div class="comment-item">
+                        {% if comment is string %}
+                            <div class="comment-header">
+                                <span class="comment-author">Anonymous</span>
+                            </div>
+                            <div class="comment-text">{{ comment }}</div>
+                        {% else %}
+                            <div class="comment-header">
+                                <span class="comment-author">{{ comment.username if comment.username else 'Anonymous' }}</span>
+                                {% if comment.date is defined and comment.date %}
+                                    <span class="comment-date">{{ comment.date }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="comment-text">{{ comment.text if comment.text is defined else '' }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+<script>
+    // --- Auto-dismiss flash messages after 5 seconds ---
+    document.querySelectorAll('.flash-message').forEach(msg => {
+        setTimeout(() => {
+            msg.style.animation = 'slideOut 0.5s ease-in forwards';
+            setTimeout(() => msg.remove(), 500);
+        }, 5000);
+    });
+
+    // --- Auto-dismiss login success popup ---
+    window.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('login-success-popup');
+        if (popup) {
+            setTimeout(()=>{ popup.style.display = 'none'; }, 2600);
+        }
+    });
+
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Floating save/progress indicator ---
+    let saveTimeout;
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.classList.add('visible');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>el.classList.remove('visible'), 1800);
+    }
+    // Show on any order button click
+    document.querySelectorAll('.order-btn').forEach(el=>{
+        el.addEventListener('click', showSaveIndicator);
+    });
+
+    // --- Star rating interaction with backend integration ---
+    document.querySelectorAll('.star').forEach(star => {
+        star.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const rating = this.getAttribute('data-rating');
+            const recipeId = this.getAttribute('data-recipe');
+            const ratingRow = this.closest('.rating-row');
+            
+            // Show loading state
+            ratingRow.style.opacity = '0.6';
+            
+            // Send rating to backend
+            try {
+                const response = await fetch(`/add_rating/${recipeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `rating=${rating}`
+                });
+                
+                if (response.ok) {
+                    // Update UI immediately for better user feedback
+                    const stars = document.querySelectorAll(`.star[data-recipe="${recipeId}"]`);
+                    stars.forEach(s => {
+                        s.classList.toggle('selected', parseInt(s.getAttribute('data-rating')) <= parseInt(rating));
+                    });
+                    
+                    // Create a temporary success message
+                    const msg = document.createElement('div');
+                    msg.className = 'flash-message success';
+                    msg.innerHTML = 'Rating updated successfully! <button class="close-btn" onclick="this.parentElement.remove()">×</button>';
+                    document.querySelector('.flash-messages').appendChild(msg);
+                    
+                    // Auto-dismiss the message
+                    setTimeout(() => {
+                        msg.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(() => msg.remove(), 500);
+                    }, 3000);
+                    
+                    // Refresh the rating display without full page reload
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error('Failed to update rating');
+                }
+            } catch (error) {
+                console.error('Error updating rating:', error);
+                // Show error message
+                const msg = document.createElement('div');
+                msg.className = 'flash-message error';
+                msg.innerHTML = 'Failed to update rating. Please try again. <button class="close-btn" onclick="this.parentElement.remove()">×</button>';
+                document.querySelector('.flash-messages').appendChild(msg);
+            } finally {
+                // Reset loading state
+                ratingRow.style.opacity = '1';
+            }
+        });
+        
+        // Keyboard navigation
+        star.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+            // Left/right arrow keys for rating selection
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const stars = Array.from(this.parentElement.children);
+                const currentIndex = stars.indexOf(this);
+                const nextIndex = e.key === 'ArrowLeft' ? 
+                    Math.max(0, currentIndex - 1) : 
+                    Math.min(stars.length - 1, currentIndex + 1);
+                stars[nextIndex].focus();
+            }
+        });
+    });
+</script>
+</body>
+</html>

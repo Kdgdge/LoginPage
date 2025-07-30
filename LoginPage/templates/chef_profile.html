@@ -1,0 +1,55 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Chef Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="customer-dashboard" style="margin-top:2.5rem;">
+        <div class="dashboard-title">Welcome, Chef {{ chef['username'] }}</div>
+        {% if chef['profile_info'] %}
+            <div class="bio" style="margin-bottom:1.2rem; color:#4a5568;">{{ chef['profile_info'] }}</div>
+        {% endif %}
+        <div class="dashboard-actions">
+            <a href="{{ url_for('manage_recipes') }}" class="dashboard-action">
+                <span class="dashboard-icon">🍳</span>
+                Manage Recipes
+            </a>
+            <a href="{{ url_for('add_recipe') }}" class="dashboard-action">
+                <span class="dashboard-icon">➕</span>
+                Add Recipe
+            </a>
+            <a href="{{ url_for('view_orders') }}" class="dashboard-action">
+                <span class="dashboard-icon">📦</span>
+                View Orders
+            </a>
+            <a href="{{ url_for('edit_profile') }}" class="dashboard-action">
+                <span class="dashboard-icon">📝</span>
+                Edit Profile
+            </a>
+        </div>
+        <div style="margin-top:2.2rem;">
+            <div class="dashboard-title" style="font-size:1.08rem; margin-bottom:1.1rem;">Your Recipes</div>
+            {% if recipes|length == 0 %}
+                <p style="color:#888; font-size:1rem;">You have not added any recipes yet.</p>
+            {% else %}
+            <div class="minimal-recipe-list">
+                {% for recipe in recipes %}
+                <a href="{{ url_for('recipe_detail', recipe_id=recipe['id']) }}" class="minimal-recipe-card" style="text-decoration:none; color:inherit;">
+                    {% if recipe['image_filename'] %}
+                        <img src="{{ url_for('static', filename='recipe_images/' ~ recipe['image_filename']) }}" class="minimal-recipe-img" alt="Recipe Image">
+                    {% endif %}
+                    <div class="minimal-recipe-info">
+                        <div class="minimal-recipe-title">{{ recipe['title'] }}</div>
+                        {% if recipe['description'] %}<div class="minimal-recipe-desc">{{ recipe['description'][:80] }}{% if recipe['description']|length > 80 %}...{% endif %}</div>{% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html> 

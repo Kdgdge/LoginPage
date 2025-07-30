@@ -1,0 +1,47 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Browse Chefs</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 2.5rem auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px #4299e122, 0 2px 8px #0001; padding: 2.5rem 2rem; }
+        h1 { text-align: center; color: #2c3e50; font-size: 2.2rem; margin-bottom: 2.2rem; letter-spacing: 0.01em; }
+        .chefs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; }
+        .chef-card { background: #f8fafc; border-radius: 14px; box-shadow: 0 2px 8px #4299e111; padding: 2rem 1.2rem 1.2rem 1.2rem; display: flex; flex-direction: column; align-items: center; transition: box-shadow 0.2s, transform 0.2s; position: relative; }
+        .chef-card:hover { box-shadow: 0 8px 32px #805ad522, 0 2px 8px #0001; transform: translateY(-4px) scale(1.03); }
+        .chef-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #4299e1 60%, #805ad5 100%); display: flex; align-items: center; justify-content: center; font-size: 2.3rem; color: #fff; font-weight: 700; margin-bottom: 1.1rem; box-shadow: 0 2px 8px #4299e122; }
+        .chef-link { color: #4299e1; font-size: 1.25rem; text-decoration: none; font-weight: 600; letter-spacing: 0.01em; transition: color 0.18s; }
+        .chef-link:hover { color: #805ad5; text-decoration: underline; }
+        .bio { color: #4a5568; margin-top: 0.5rem; font-size: 1.05rem; text-align: center; min-height: 2.2em; }
+        .chef-badge { position: absolute; top: 1.1rem; right: 1.1rem; background: #805ad5; color: #fff; font-size: 0.85rem; padding: 0.25rem 0.8rem; border-radius: 12px; font-weight: 600; letter-spacing: 0.01em; box-shadow: 0 2px 8px #805ad522; }
+        @media (max-width: 600px) { .container { padding: 1rem; } .chefs-grid { grid-template-columns: 1fr; gap: 1.2rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Browse Chefs</h1>
+        {% if chefs|length == 0 %}
+            <p style="text-align:center; color:#718096; font-size:1.1rem;">No chefs found.</p>
+        {% else %}
+        <div class="chefs-grid">
+            {% for chef in chefs %}
+            <div class="chef-card">
+                <div class="chef-avatar">
+                    {{ chef['username'][0]|upper }}
+                </div>
+                <a href="{{ url_for('chef_profile', username=chef['username']) }}" class="chef-link">{{ chef['username'] }}</a>
+                {% if chef['profile_info'] %}
+                    <div class="bio">{{ chef['profile_info'] }}</div>
+                {% else %}
+                    <div class="bio" style="color:#a0aec0;">No bio provided.</div>
+                {% endif %}
+                <div class="chef-badge">Chef</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html> 

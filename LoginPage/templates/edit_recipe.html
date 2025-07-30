@@ -1,0 +1,48 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Edit Recipe</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 500px; margin: 2rem auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; }
+        h1 { text-align: center; color: #2c3e50; }
+        form { display: flex; flex-direction: column; gap: 1.2rem; }
+        label { color: #4a5568; font-size: 1rem; }
+        input, textarea { width: 100%; padding: 0.7rem; border: 1px solid #e2e8f0; border-radius: 5px; font-size: 1rem; }
+        textarea { min-height: 80px; }
+        button { background: #4299e1; color: #fff; border: none; border-radius: 5px; padding: 0.7rem; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #3182ce; }
+        .back-link { display: block; margin-bottom: 1rem; color: #4299e1; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .current-image { margin-bottom: 1rem; }
+        .current-image img { max-width: 100%; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('manage_recipes') }}" class="back-link">&larr; Back to Recipes</a>
+        <h1>Edit Recipe</h1>
+        <form method="post" enctype="multipart/form-data">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="{{ recipe['title'] }}" required>
+            <label for="description">Description</label>
+            <input type="text" id="description" name="description" value="{{ recipe['description'] }}">
+            <label for="ingredients">Ingredients</label>
+            <textarea id="ingredients" name="ingredients">{{ recipe['ingredients'] }}</textarea>
+            <label for="instructions">Instructions</label>
+            <textarea id="instructions" name="instructions">{{ recipe['instructions'] }}</textarea>
+            {% if recipe['image_filename'] %}
+                <div class="current-image">
+                    <label>Current Image:</label><br>
+                    <img src="{{ url_for('static', filename='recipe_images/' ~ recipe['image_filename']) }}" alt="Recipe Image">
+                </div>
+            {% endif %}
+            <label for="image">Change Image</label>
+            <input type="file" id="image" name="image" accept="image/*">
+            <button type="submit">Update Recipe</button>
+        </form>
+    </div>
+</body>
+</html> 

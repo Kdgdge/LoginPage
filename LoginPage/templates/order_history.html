@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Order History</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 2rem auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 2rem; }
+        h1 { text-align: center; color: #2c3e50; }
+        .fade-section { opacity:0; transform:translateY(24px); transition:opacity 0.6s, transform 0.6s; }
+        .fade-section.visible { opacity:1; transform:none; }
+        .container-fade { animation: fadeInMain 0.8s cubic-bezier(.4,0,.2,1); }
+        @keyframes fadeInMain { from { opacity: 0; transform: translateY(32px);} to { opacity: 1; transform: none; } }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        th { font-size: 1.05rem; font-weight: 600; color: #2c5282; background: #f1f5f9; }
+        .status { border-radius: 5px; padding: 0.2rem 0.7rem; font-size: 1rem; font-weight: bold; }
+        .status.pending { background: #fefcbf; color: #b7791f; }
+        .status.accepted { background: #c6f6d5; color: #276749; }
+        .status.completed { background: #bee3f8; color: #2b6cb0; }
+        .status.cancelled { background: #fed7d7; color: #c53030; }
+        .floating-save { position: fixed; bottom: 32px; left: 32px; z-index: 1003; background: #fff; color: #4299e1; border-radius: 24px; box-shadow: 0 2px 12px #4299e133; padding: 0.7rem 1.5rem; font-weight: 600; font-size: 1.08rem; display: flex; align-items: center; gap: 0.7rem; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+        .floating-save.visible { opacity: 1; pointer-events: auto; }
+    </style>
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="container container-fade fade-section">
+    <div class="floating-save" id="floating-save"><span>💾</span> Progress Saved</div>
+    <script>
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Floating save/progress indicator ---
+    let saveTimeout;
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.classList.add('visible');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>el.classList.remove('visible'), 1800);
+    }
+    // Show on any table row click (simulate interaction)
+    document.querySelectorAll('tbody tr').forEach(el=>{
+        el.addEventListener('click', showSaveIndicator);
+    });
+    </script>
+        <h1>Your Order History</h1>
+        <div class="live-shows-section" style="margin-bottom:2.5rem;">
+            <h2 style="color:#2b6cb0;font-size:1.25rem;margin-bottom:0.7rem;">Live Shows</h2>
+            {% if live_shows or upcoming_shows %}
+                <ul style="list-style:none;padding:0;">
+                    {% for show in live_shows %}
+                        <li style="margin-bottom:0.7rem;padding:0.8rem 1.2rem;background:#e6fffa;border-radius:7px;display:flex;align-items:center;justify-content:space-between;">
+                            <div>
+                                <a href="{{ url_for('show_detail', show_id=show.id) }}" style="font-weight:600;color:#285e61;text-decoration:underline;">{{ show.title }}</a>
+                                <span style="margin-left:1.2em;color:#319795;font-size:0.98em;">LIVE NOW</span>
+                                <span style="margin-left:1.2em;color:#4a5568;font-size:0.97em;">{{ show.start_time }}</span>
+                            </div>
+                            <a href="{{ url_for('live_show', show_id=show.id) }}" style="background:#38b2ac;color:#fff;padding:0.5em 1.2em;border-radius:5px;text-decoration:none;font-weight:500;">Join</a>
+                        </li>
+                    {% endfor %}
+                    {% for show in upcoming_shows %}
+                        <li style="margin-bottom:0.7rem;padding:0.8rem 1.2rem;background:#f0fff4;border-radius:7px;display:flex;align-items:center;justify-content:space-between;">
+                            <div>
+                                <a href="{{ url_for('show_detail', show_id=show.id) }}" style="font-weight:600;color:#276749;text-decoration:underline;">{{ show.title }}</a>
+                                <span style="margin-left:1.2em;color:#68d391;font-size:0.98em;">Upcoming</span>
+                                <span style="margin-left:1.2em;color:#4a5568;font-size:0.97em;">{{ show.start_time }}</span>
+                            </div>
+                            <span style="background:#68d391;color:#fff;padding:0.5em 1.2em;border-radius:5px;font-weight:500;">Starts Soon</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div style="color:#a0aec0;font-size:1.05em;">No live or upcoming shows at the moment.</div>
+            {% endif %}
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% if orders|length == 0 %}
+            <p>You have not placed any orders yet.</p>
+        {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Recipe</th>
+                    <th>Chef</th>
+                    <th>Ordered At</th>
+                    <th>Status</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order['title'] }}</td>
+                    <td>{{ order['chef_name'] }}</td>
+                    <td>{{ order['timestamp'] }}</td>
+                    <td class="status">{{ order['status'] }}</td>
+                    <td>
+                        {% set rating = order['rating'] if 'rating' in order else None %}
+                        {% if rating %}
+                            <span style="color:#f6ad55;">
+                                {% for i in range(1,6) %}
+                                    <span style="font-size:1.2em;">&#9733;</span>{% if i == rating|int %}<span style="color:#cbd5e0;">{% endif %}{% endfor %}
+                            </span>
+                            <span style="color:#805ad5;font-size:0.98em;">{{ '%.1f'|format(rating|float) }}/5</span>
+                        {% else %}
+                            <span style="color:#cbd5e0;">No rating</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+{% include 'navbar.html' %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ recipe.title }} - Recipe Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .fade-section { opacity:0; transform:translateY(24px); transition:opacity 0.6s, transform 0.6s; }
+        .fade-section.visible { opacity:1; transform:none; }
+        .detail-container { animation: fadeInMain 0.8s cubic-bezier(.4,0,.2,1); }
+        .order-btn { border-radius: 7px; font-weight: 500; transition: background 0.18s, box-shadow 0.18s, transform 0.13s; }
+        .order-btn:focus { outline: 2px solid #4299e1 !important; outline-offset: 1px; background: #f0f8ff; }
+        .order-btn:hover { background: #3182ce !important; color: #fff !important; box-shadow: 0 4px 16px #3182ce22; transform: translateY(-2px) scale(1.03); }
+        .floating-save { position: fixed; bottom: 32px; left: 32px; z-index: 1003; background: #fff; color: #4299e1; border-radius: 24px; box-shadow: 0 2px 12px #4299e133; padding: 0.7rem 1.5rem; font-weight: 600; font-size: 1.08rem; display: flex; align-items: center; gap: 0.7rem; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+        .floating-save.visible { opacity: 1; pointer-events: auto; }
+        .detail-container { max-width: 600px; margin: 2rem auto; background: #fff; border-radius: 14px; box-shadow: 0 4px 24px #4299e133, 0 2px 8px #0001; padding: 2.3rem 2.2rem 2.2rem 2.2rem; animation: fadeInMain 0.8s cubic-bezier(.4,0,.2,1); }
+        @keyframes fadeInMain { from { opacity: 0; transform: translateY(32px);} to { opacity: 1; transform: none; } }
+        .detail-title { font-size: 2.2rem; color: #2c5282; margin-bottom: 0.5rem; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 2px 8px #4299e122; }
+        .detail-chef { color: #718096; margin-bottom: 1.2rem; font-size: 1.08rem; }
+        .detail-img { width: 100%; max-width: 370px; height: auto; border-radius: 12px; margin-bottom: 1.2rem; display: block; box-shadow: 0 4px 18px #4299e122; }
+        .detail-section { margin-bottom: 1.3rem; }
+        .detail-label { font-weight: 700; color: #234e70; margin-bottom: 0.2rem; display: block; font-size: 1.13rem; letter-spacing: 0.01em; }
+        .detail-desc { color: #4a5568; margin-bottom: 1.2rem; font-size: 1.08rem; }
+        .detail-list { margin: 0.3rem 0 0.7rem 1.2rem; color: #2c5282; font-size: 1.05rem; }
+        .detail-list li { margin-bottom: 0.18rem; line-height: 1.5; }
+        .detail-instructions { margin: 0.3rem 0 0.7rem 1.2rem; color: #234e70; font-size: 1.05rem; }
+        .detail-instructions li { margin-bottom: 0.18rem; line-height: 1.5; }
+        .order-btn { border-radius: 7px; font-weight: 600; font-size: 1.08rem; padding: 0.7rem 1.5rem; }
+        .qty-btn { background: #e2e8f0; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1.2rem; color: #2c5282; cursor: pointer; margin: 0 0.3rem; transition: background 0.18s; }
+        .qty-btn:hover { background: #4299e1; color: #fff; }
+        .qty-input { width: 48px; text-align: center; font-size: 1.1rem; border: 1px solid #cbd5e1; border-radius: 5px; padding: 0.3rem; margin: 0 0.3rem; }
+        .quantity-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.7rem; }
+        .order-btn { border-radius: 7px; font-weight: 500; transition: background 0.18s, box-shadow 0.18s, transform 0.13s; }
+        .order-btn:focus { outline: 2px solid #4299e1 !important; outline-offset: 1px; }
+        .order-btn:hover { background: #3182ce !important; color: #fff !important; box-shadow: 0 4px 16px #3182ce22; transform: translateY(-2px) scale(1.03); }
+    </style>
+</head>
+<body>
+    <div class="detail-container fade-section">
+    <div class="floating-save" id="floating-save"><span>💾</span> Progress Saved</div>
+    <script>
+    // --- Animated Section Transitions ---
+    function showSections() {
+        document.querySelectorAll('.fade-section').forEach((el,i)=>{
+            setTimeout(()=>el.classList.add('visible'), 200+200*i);
+        });
+    }
+    window.addEventListener('DOMContentLoaded', showSections);
+
+    // --- Floating save/progress indicator ---
+    let saveTimeout;
+    function showSaveIndicator() {
+        const el = document.getElementById('floating-save');
+        el.classList.add('visible');
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(()=>el.classList.remove('visible'), 1800);
+    }
+    // Show on any order button click or form input
+    document.querySelectorAll('.order-btn, input, textarea').forEach(el=>{
+        el.addEventListener('click', showSaveIndicator);
+        el.addEventListener('input', showSaveIndicator);
+    });
+    </script>
+        <div class="detail-title">{{ recipe.title }}</div>
+        <div class="detail-chef">By {{ chef_name }}</div>
+        {% if recipe.image_filename %}
+            <img src="{{ url_for('static', filename='recipe_images/' ~ recipe.image_filename) }}" class="detail-img" alt="Recipe Image">
+        {% endif %}
+        {% set rating = recipe['rating'] if 'rating' in recipe else None %}
+        <div style="margin-bottom:1.2em;">
+            {% if rating %}
+                <span style="color:#f6ad55;">
+                    {% for i in range(1,6) %}
+                        <span style="font-size:1.2em;">&#9733;</span>{% if i == rating|int %}<span style="color:#cbd5e0;">{% endif %}{% endfor %}
+                </span>
+                <span style="color:#805ad5;font-size:0.98em;">{{ '%.1f'|format(rating|float) }}/5</span>
+            {% else %}
+                <span style="color:#cbd5e0;">No rating</span>
+            {% endif %}
+        </div>
+        <div class="detail-section">
+            <span class="detail-label">Description:</span>
+            <div class="detail-desc">{{ recipe.description }}</div>
+        </div>
+        <div class="detail-section">
+            <span class="detail-label">Ingredients:</span>
+            <div class="detail-desc">{{ recipe.ingredients }}</div>
+        </div>
+        <div class="detail-section">
+            <span class="detail-label">Instructions:</span>
+            <div class="detail-desc">{{ recipe.instructions }}</div>
+        </div>
+        {% if recipe.additional_info %}
+        <div class="detail-section">
+            <span class="detail-label">Additional Info:</span>
+            <div class="detail-desc">{{ recipe.additional_info }}</div>
+        </div>
+        {% endif %}
+        <div class="detail-section">
+            <span class="detail-label">Ingredients:</span>
+            {% if recipe.ingredients and recipe.ingredients|count > 0 and '\n' in recipe.ingredients %}
+            <ul class="detail-list">
+                {% for ing in recipe.ingredients.split('\n') %}
+                <li>{{ ing }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="detail-desc">{{ recipe.ingredients }}</div>
+            {% endif %}
+        </div>
+        <div class="detail-section">
+            <span class="detail-label">Instructions:</span>
+            {% if recipe.instructions and recipe.instructions|count > 0 and '\n' in recipe.instructions %}
+            <ol class="detail-instructions">
+                {% for step in recipe.instructions.split('\n') %}
+                <li>{{ step }}</li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <div class="detail-desc">{{ recipe.instructions }}</div>
+            {% endif %}
+        </div>
+        {% if session['user_type'] == 'customer' %}
+        <form action="{{ url_for('order_recipe', recipe_id=recipe['id']) }}" method="post" class="custom-order-form" style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
+            <div class="quantity-row">
+                <label for="quantity" style="font-weight:500;color:#2c5282;">Quantity:</label>
+                <div class="quantity-control">
+                    <button type="button" class="qty-btn" onclick="changeQty(-1)">-</button>
+                    <input type="number" id="quantity" name="quantity" min="1" value="1" required class="qty-input">
+                    <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+                </div>
+            </div>
+    <script>
+    function changeQty(delta) {
+        var input = document.getElementById('quantity');
+        var val = parseInt(input.value) || 1;
+        val += delta;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+    </script>
+            <div style="display:flex;flex-direction:column;">
+                <label for="instructions" style="font-weight:500;color:#2c5282;margin-bottom:0.2rem;">Special Instructions:</label>
+                <textarea id="instructions" name="instructions" rows="2" placeholder="e.g. No nuts, extra spicy, etc." style="resize:vertical;padding:0.5rem;border-radius:5px;border:1px solid #cbd5e1;"></textarea>
+            </div>
+            <button type="submit" class="order-btn">Order This Recipe</button>
+        </form>
+        {% endif %}
+    </div>
+</body>
+</html>
